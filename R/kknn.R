@@ -1,0 +1,563 @@
+.First.lib  <- function(libname, pkgname) {
+	library.dynam ("kknn", pkgname, libname)
+}
+
+
+simulation <- function(formula, data, runs = 10, train = TRUE, k = 11, ...)
+{
+   mf <- model.frame(formula, data=data)
+   y <- model.response(mf)
+   MISCLASS<-numeric(runs)
+   MEAN.ABS<-numeric(runs)
+   MEAN.SQU<-numeric(runs)
+   for(i in 1:runs)
+     {
+     set.seed(i)
+     m<-dim(data)[1]
+     val<-sample(1:m, size=round(m/3), replace=FALSE, prob=rep(1/m, m)) 
+     learn<-data[-val,]
+     valid<-data[val,]
+     ytmp<-y[val]
+     
+     if(train){
+     	fit = train.kknn(formula , learn, kmax = k, ...)
+     	pred <- predict(fit, valid)}
+     if(!train) pred <- predict(kknn(formula, learn, valid, k = k, ...))
+     if(is.factor(y)) MISCLASS[i]<-sum(ytmp != pred)/dim(valid)[1]
+     if(is.numeric(y) | is.ordered(y)) MEAN.ABS[i]<-sum(abs(as.numeric(ytmp) -
+		as.numeric(pred)))/dim(valid)[1]
+     if(is.numeric(y) | is.ordered(y)) MEAN.SQU[i]<-sum((as.numeric(ytmp) -
+		as.numeric(pred))^2)/dim(valid)[1]
+     }  
+   if(is.numeric(y)){ result <- matrix(data=c(mean(MEAN.ABS), sd(MEAN.ABS),
+		mean(MEAN.SQU), sd(MEAN.SQU)), nrow=2, ncol=2)
+		colnames(result)<-c("absolute distance", "squared distance")
+		rownames(result)<-c("mean", "sd")                         
+   }
+   if(is.ordered(y)){ result<-matrix(data=c(mean(MISCLASS), sd(MISCLASS), 
+		mean(MEAN.ABS), sd(MEAN.ABS),
+		mean(MEAN.SQU), sd(MEAN.SQU)), 
+		nrow=2, ncol=3)
+		colnames(result)<-c("misclassification","absolute distance", "squared distance")
+		rownames(result)<-c("Mean", "sd")
+		} 
+   if(is.factor(y) & !is.ordered(y)){ result<-matrix(data=c(mean(MISCLASS), sd(MISCLASS)),	nrow=2, ncol=1)   
+   		colnames(result)<-"misclassification"
+   		rownames(result)<-c("mean", "sd")
+   		} 
+   result
+}
+
+
+contr.dummy <- function (n, contrasts = TRUE) 
+{
+    if (length(n) <= 1) {
+        if (is.numeric(n) && length(n) == 1 && n > 1) 
+            levels <- 1:n
+        else stop("contrasts are not defined for 0 degrees of freedom")
+    }
+    else levels <- n
+    	lenglev <- length(levels)
+        cont <- array(0, c(lenglev, lenglev), list(levels, levels))
+        cont[col(cont) == row(cont)] <- 1
+    cont
+}
+
+
+contr.ordinal <- function (n, contrasts = TRUE) 
+{
+    if (length(n) <= 1) {
+        if (is.numeric(n) && length(n) == 1 && n > 1) 
+            levels <- 1:n
+        else stop("contrasts are not defined for 0 degrees of freedom")
+    }
+    else levels <- n
+    	lenglev <- length(levels)
+        cont <- array(0.5, c(lenglev, lenglev - 1), list(levels, NULL))
+        cont[lower.tri(cont)] <- -0.5
+    cont
+}
+
+
+contr.metric <- function(n, contrasts = TRUE) 
+{	
+    if (length(n) <= 1) {
+        if (is.numeric(n) && length(n) == 1 && n > 1) 
+            levels <- 1:n
+        else stop("contrasts are not defined for 0 degrees of freedom")
+    }
+    else levels <- n
+    	lenglev <- length(levels)
+        cont <- array((1:lenglev)-(1+lenglev)/2 , c(lenglev,1), list(levels,NULL)) 
+    cont	
+}
+
+
+kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k = 7, distance = 2, 
+    kernel = "triangular",contrasts=c('unordered'="contr.dummy",ordered="contr.ordinal")) 
+{
+
+weight.y = function(l=1,diff = 0){
+	k=diff+1
+    result=matrix(0,l,l)
+    diag(result)=k
+    for(i in 1:(k-1)){
+        for(j in 1:(l-i)){
+                result[j,j+i]=k-i
+                result[j+i,j]=k-i
+                }
+        }
+        result  
+}
+
+
+	use.priori=FALSE
+	ca <- match.call()
+	response = NULL
+	old.contrasts<-getOption('contrasts')
+	options(contrasts=contrasts)
+
+    mf <- model.frame(formula, data = train)
+    mt <- attr(mf, "terms")
+
+    cl <- model.response(mf)
+
+if(is.ordered(cl)) {response<-"ordinal"
+	 lev <- levels(cl)
+	}
+if(is.numeric(cl)) response<-"continuous"
+if(is.factor(cl) & !is.ordered(cl)){
+	response<-"nominal"
+	 lev <- levels(cl)
+	}
+	
+if(distance<=0)stop('distance must >0')
+if(k<=0)stop('k must >0')
+
+   learn <- model.matrix(mt, mf)
+   valid <-model.matrix(mt,test)
+
+    m <- dim(learn)[1]
+    p <- dim(valid)[1]
+    q <- dim(learn)[2]
+	D <- matrix(0, nrow = p, ncol = k+1)
+    CL <- matrix(0, nrow = p, ncol = k+1)
+   
+   	ind <- attributes(valid)$assign
+   	
+    d.sd<-numeric(length(ind))+1
+    we<-numeric(length(ind))+1
+    
+    for ( i in 1:max(ind)){
+    	d.sd[ind==i]=sqrt(mean(diag(cov(as.matrix(learn[,ind==i])))))
+    	we[ind==i] = 1/sum(ind==i)
+    	}
+    
+    we[d.sd==0]=0
+  	d.sd[d.sd==0]=1
+  
+    learn <- t(t(learn)/d.sd)
+    valid <- t(t(valid)/d.sd)
+
+	dmtmp <- .C("dm", as.double(learn), as.double(valid), 
+    	as.integer(m), as.integer(p), as.integer(q), 
+    	dm=as.double(D), cl=as.integer(CL), k=as.integer(k+1), 
+    	as.double(distance),as.double(we),PACKAGE='kknn')
+    
+    D <- matrix(dmtmp$dm, nrow = p, ncol = k + 1)
+    C <- matrix(dmtmp$cl, nrow = p, ncol = k + 1)
+    maxdist <- D[, k + 1]
+    D <- D[, 1:k]
+    C <- C[, 1:k]+1
+    CL <- matrix(cl[C], nrow = p, ncol = k)     
+    
+if(response!="continuous"){
+    l <- length(lev)
+    weightClass <- matrix(0, p, l)
+}
+if(response=="continuous"){
+     weightClass <- NULL
+}
+
+	W <- D/sapply(maxdist,'max',1e-6)
+	W <- pmin(W,1-(1e-6))
+	W <- pmax(W,1e-6)
+
+#	
+# Kernels
+#	
+	if (kernel=="rank") W <- (j+1)-t(apply(as.matrix(D),1,rank))
+	if (kernel=="inv") W <- 1/W
+	if (kernel=="rectangular"){ W <- matrix(1,nrow = p, ncol = k)
+			D
+		}
+    if (kernel=="triangular") W <- 1-W	 	
+    if (kernel=="epanechnikov") W <- 0.75*(1-W^2) 	
+	if (kernel=="biweight") W <- dbeta((W+1)/2,3,3)	 	
+	if (kernel=="triweight") W <- dbeta((W+1)/2,4,4)	 	
+	if (kernel=="cos") W <- cos(W*pi/2)
+	if (kernel=="triweights") W <- 1
+	if (kernel=="gaussian"){
+		alpha=1/(2*(k+1))
+		qua=abs(qnorm(alpha))
+		sdv=maxdist/qua
+		apply(W,2,dnorm,sd=sdv)
+	}
+
+if(response!="continuous"){
+    for (i in 1:l) {
+		weightClass[, i] <- rowSums(W * (CL == lev[i]))	
+    }
+	if(use.priori){priori <- sapply(1-(summary(y)/m),'max',1e-6)
+		weightClass <- weightClass %*% diag(priori)}
+    weightClass <- weightClass/rowSums(weightClass)	
+	colnames(weightClass) <- lev
+    }
+    
+if (response=="ordinal") {
+   
+	blub = length(lev)
+ 	weightClass= weightClass%*%weight.y(blub,0)
+    weightClass <- weightClass/rowSums(weightClass)	
+    weightClass <- t(apply(weightClass, 1, cumsum))
+    colnames(weightClass) <- lev
+       	
+    fit <- numeric(p)
+    for (i in 1:p) fit[i] <- min((1:l)[weightClass[i, ] >= 0.5])
+    fit <- ordered(fit, levels = 1:l, labels = lev)
+    }
+	if(response=="nominal"){ 
+		fit <- apply(weightClass, 1, order, decreasing = TRUE)[1,]
+		fit <- factor(fit, levels = 1:l, labels = lev)
+
+	if(kernel=="rectangular" && k>1){
+		blub <- apply(weightClass, 1, rank, ties.method = "max")
+		indices = (1:p)[colSums(blub==l)>1]
+		blub=t(blub)
+		nM = matrix(0,p,l) 
+		colnames(nM)=lev
+		for(i in 1:l) nM[,i] = apply((CL==lev[i]) %*% diag(1:k) ,1,max)
+
+		nM = (blub==l)*nM  
+		nM[nM==0] <- k+1
+		fitv = numeric(p)
+		for(i in indices) fitv[i]=which(nM[i,]==min(nM[i,]))
+		fit[indices] <- factor(fitv[indices], levels = 1:l, labels = lev)
+		}
+	}
+	if(response=="continuous") fit <- rowSums(W*CL)/sapply(rowSums(W),'max',1e-6) 
+
+    options('contrasts'=old.contrasts)	
+	
+    result <- list(fitted.values=fit,CL=CL,W=W,D=D,prob=weightClass,response=response,distance=distance,call=ca, terms=mt)	
+    class(result)='kknn'
+    result
+}
+
+
+print.kknn <- function(x, digits = max(3, getOption("digits") - 3), ...) 
+{
+    cat("\nCall:\n", deparse(x$call), "\n\n", sep = "")
+   	cat("Response: ",deparse(x$response),"\n",sep="")
+}
+
+
+summary.kknn <- function(object, ...)
+{
+	cat("\nCall:\n", deparse(object$call), "\n\n", sep = "")
+	cat("Response: ",deparse(object$response),"\n",sep="")
+	digits = max(3, getOption("digits") - 3)
+	if(object$response!="continuous")print(data.frame(fit=object$fitted.value,prob=object$prob),digits)
+	fit <- object$fit
+}
+
+
+predict.kknn <- function(object,...)return(object$fit)
+
+
+predict.train.kknn <- function (object, newdata, ...) 
+{
+    if (missing(newdata)) 
+        return(object$fit)
+    res = kknn(formula(terms(object)), object$data, newdata, 
+        k = object$best.parameters$k, kernel = object$best.parameters$kernel, 
+        distance = object$distance)
+   return(predict(res))
+}
+
+
+train.kknn <- function (formula, data, kmax = 11, kernel = NULL, distance = 2, contrasts=c('unordered'="contr.dummy",ordered="contr.ordinal"), ...) 
+{
+
+weight.y = function(l=1,diff = 0){
+	k=diff+1
+    result=matrix(0,l,l)
+    diag(result)=k
+    for(i in 1:(k-1)){
+        for(j in 1:(l-i)){
+                result[j,j+i]=k-i
+                result[j+i,j]=k-i
+                }
+        }
+        result  
+}
+
+
+	use.priori = FALSE
+    call <- match.call()
+    mf <- model.frame(formula, data = data)
+    mt <- attr(mf, "terms")
+    y <- model.response(mf)
+    cl <- model.response(mf)
+    old.contrasts <- getOption("contrasts")
+	options(contrasts = contrasts)
+    mm.data <- model.matrix(mt, mf)
+    if (is.null(kernel)) 
+        kernel = "triangular"
+    r <- length(kernel)
+    MISCLASS <- matrix(nrow = kmax, ncol = r, dimnames = list(c(1:kmax), 
+        kernel))
+    MEAN.ABS <- matrix(nrow = kmax, ncol = r, dimnames = list(c(1:kmax), 
+        kernel))
+    MEAN.SQU <- matrix(nrow = kmax, ncol = r, dimnames = list(c(1:kmax), 
+        kernel))
+    RSquare <- matrix(nrow = kmax, ncol = r, dimnames = list(c(1:kmax), 
+        kernel))
+    m <- dim(data)[1]
+    prediction <- y
+    CL <- matrix(nrow = m, ncol = kmax + 2)
+    D <- matrix(nrow = m, ncol = kmax + 2)
+    P <- list(kmax * r)
+    m <- dim(mm.data)[1]
+    q <- dim(mm.data)[2]
+    p <- m
+    D <- matrix(0, nrow = p, ncol = kmax + 2)
+    CL <- matrix(0, nrow = p, ncol = kmax + 2)
+    ind <- attributes(mm.data)$assign
+    d.sd <- numeric(length(ind)) + 1
+    we <- numeric(length(ind)) + 1
+    for (i in 1:max(ind)) {
+        d.sd[ind == i] = sqrt(mean(diag(cov(as.matrix(mm.data[, 
+            ind == i])))))
+        we[ind == i] = 1/sum(ind == i)
+    }
+    we[d.sd==0]=0
+    d.sd[d.sd==0]=1
+    
+    mm.data <- t(t(mm.data)/d.sd)
+    mm.data[, 1] <- mm.data[, 1] + runif(m, 0, 1e-04)
+ 
+    dmtmp <- .C("dm", as.double(mm.data), as.double(mm.data), 
+        as.integer(m), as.integer(p), as.integer(q), dm = as.double(D), 
+        cl = as.integer(CL), k = as.integer(kmax + 2), as.double(distance), 
+        as.double(we), PACKAGE = "kknn")
+    D <- matrix(dmtmp$dm, nrow = p, ncol = kmax + 2)
+    C <- matrix(dmtmp$cl, nrow = p, ncol = kmax + 2)
+    C <- C + 1
+    CL <- matrix(cl[C], nrow = p, ncol = kmax+2)
+    D <- D[,-1]
+    C <- C[,-1]
+    CL <- CL[,-1]
+    if (is.ordered(y)) {
+        response <- "ordinal"
+        lev <- levels(y)
+        l <- length(lev)
+        weightClass <- matrix(0, m, l)
+    }
+    if (is.numeric(y)) {
+        response <- "continuous"
+        weightClass <- NULL
+    }
+    if (is.factor(y) & !is.ordered(y)) {
+        response <- "nominal"
+        lev <- levels(y)
+        l <- length(lev)
+        weightClass <- matrix(0, m, l)
+    }
+    if (response == "continuous") 
+        y1 = y
+    if (response == "nominal") 
+        y1 = model.matrix(~-1 + y, contrasts = list(y = "contr.dummy"))
+    if (response == "ordinal") 
+        y1 = t(apply(model.matrix(~-1 + y, contrasts = list(y = "contr.dummy")), 
+            1, cumsum))
+    if (response != "continuous") 
+        ynull <- matrix(rep(colMeans(y1), each = m), m, l)
+    if (response == "continuous") 
+        ynull <- rep(mean(y), m)
+    for (j in 1:(kmax)) {
+ 		maxdist <- D[, j + 1]
+        for (s in 1:r) {
+            W <- D[, 1:j]/sapply(maxdist, "max", 1e-06)
+            W <- pmin(W, 1 - (1e-06))
+            W <- pmax(W, 1e-06)
+            if (kernel[s] == "rank") 
+                W <- (j + 1) - t(apply(as.matrix(D[, 1:j]), 1, 
+                  rank))
+            if (kernel[s] == "inv") 
+                W <- 1/W
+            if (kernel[s] == "rectangular") 
+                W <- matrix(1, nrow = m, ncol = j)
+            if (kernel[s] == "triangular") 
+                W <- 1 - W
+            if (kernel[s] == "epanechnikov") 
+                W <- 0.75 * (1 - W^2)
+            if (kernel[s] == "biweight") 
+                W <- dbeta((W + 1)/2, 3, 3)
+            if (kernel[s] == "triweight") 
+                W <- dbeta((W + 1)/2, 4, 4)
+            if (kernel[s] == "cos") 
+                W <- cos(W * pi/2)
+            if (kernel[s] == "gaussian") {
+                v <- j + 1
+                alpha = 1/(2 * v)
+                qua = abs(qnorm(alpha))
+                sdv = maxdist/qua
+                apply(as.matrix(W), 2, dnorm, sd = sdv)
+            }
+            W <- matrix(W, m, j)
+            if (response != "continuous") {
+                for (i in 1:l) {
+                  weightClass[, i] <- rowSums(W * (matrix(CL[, 
+                    1:j], m, j) == lev[i]))
+                }
+                if (use.priori) {
+                  priori <- sapply(1 - (summary(y)/m), "max", 
+                    1e-06)
+                  weightClass <- weightClass %*% diag(priori)
+                }
+                weightClass <- weightClass/rowSums(weightClass)
+                colnames(weightClass) <- lev
+            }
+            if (response == "ordinal") {
+				blub = length(lev)
+				weightClass= weightClass%*%weight.y(blub,0)
+    			weightClass <- weightClass/rowSums(weightClass)	
+		      	weightClass <- t(apply(weightClass, 1, cumsum))
+ 		      	colnames(weightClass) <- lev
+                                       
+                fit <- numeric(m)
+                for (i in 1:m) fit[i] <- min((1:l)[weightClass[i, 
+                  ] >= 0.5])
+                fit <- ordered(fit, levels = 1:l, labels = lev)
+            }
+            if (response == "nominal") {
+                fit <- apply(weightClass, 1, order, decreasing = TRUE)[1,]
+                fit <- factor(fit, levels = 1:l, labels = lev)
+                
+                if(kernel[s]=="rectangular" && j>1){		
+					blub <- apply(weightClass, 1, rank, ties.method = "max")
+					indices = (1:p)[colSums(blub==l)>1]
+					blub=t(blub)
+					nM = matrix(0,p,l) 
+					colnames(nM)=lev
+					for(i in 1:l) nM[,i] = apply((CL[,1:j]==lev[i]) %*% diag(1:j) ,1,max)
+
+					nM = (blub==l)*nM  
+					nM[nM==0] <- j+1
+					fitv = numeric(p)
+					for(i in indices) fitv[i]=which(nM[i,]==min(nM[i,]))
+					fit[indices] <- factor(fitv[indices], levels = 1:l, labels = lev)
+				}                
+            }
+            if (response == "continuous") {
+                fit <- rowSums(W * (matrix(CL[, 1:j], m, j)))/sapply(rowSums(matrix(W, 
+                  m, j)), "max", 1e-06)
+                weightClass = fit
+            }
+            
+		    attr(fit,"kernel") = kernel[s] 	
+			attr(fit,"k") = j  				
+            
+            P[[j + (s - 1) * kmax]] = fit
+            RSquare[j, s] <- 1 - sum((weightClass - y1)^2)/sum((ynull - 
+                y1)^2)
+        }
+    }
+    sum((ynull - y1)^2)
+    for (j in 1:kmax) {
+        for (s in 1:r) {
+            if (is.factor(y)) 
+                MISCLASS[j, s] <- sum(y != P[[j + (s - 1) * kmax]])/m
+            if (is.numeric(y) | is.ordered(y)) 
+                MEAN.ABS[j, s] <- sum(abs(as.numeric(y) - as.numeric(P[[j + 
+                  (s - 1) * kmax]])))/m
+            if (is.numeric(y) | is.ordered(y)) 
+                MEAN.SQU[j, s] <- sum((as.numeric(y) - as.numeric(P[[j + 
+                  (s - 1) * kmax]]))^2)/m
+        }
+    }
+    
+    if(response=='nominal')best <- which(MISCLASS==min(MISCLASS),arr.ind=TRUE)
+    if(response=='ordinal')best <- which(MEAN.ABS==min(MEAN.ABS),arr.ind=TRUE)
+    if(response=='continuous')best <- which(MEAN.SQU==min(MEAN.SQU),arr.ind=TRUE)
+    best.parameters = list(kernel=kernel[best[1,2]],k=best[1,1])
+    
+    old.contrasts<-getOption('contrasts')
+      
+    result = list(MISCLASS = MISCLASS, MEAN.ABS = MEAN.ABS, MEAN.SQU = MEAN.SQU, 
+    	fitted.values = P,  best.parameters=best.parameters,
+        response = response, distance = distance, call = call, terms = mt, data = data)        
+    class(result) = c("train.kknn","kknn")
+    result
+}
+
+
+print.train.kknn <- function(x, ...)
+{
+	cat("\nCall:\n", deparse(x$call), "\n\n", sep = "")
+	cat("Type of response variable: ", x$response,"\n", sep = "")
+	if(x$response=='continuous'){cat("minimal mean absolute error: ",min(x$MEAN.ABS),"\n", sep = "")
+		cat("Minimal mean squared error: ",min(x$MEAN.SQU),"\n", sep = "")}
+	if(x$response=='nominal'){
+		cat("Minimal misclassification: ",min(x$MISCLASS),"\n", sep = "")}
+	if(x$response=='ordinal'){cat("minimal mean absolute error: ",min(x$MEAN.ABS),"\n", sep = "")
+		cat("Minimal mean squared error: ",min(x$MEAN.SQU),"\n", sep = "")
+		cat("Minimal misclassification: ",min(x$MISCLASS),"\n", sep = "")
+		}	
+	cat("Best kernel: ", x$best$kernel,"\n", sep = "")
+	cat("Best k: ", x$best$k,"\n", sep = "")	
+}
+
+
+summary.train.kknn <- function(object, ...)
+{
+	cat("\nCall:\n", deparse(object$call), "\n\n", sep = "")
+	cat("Type of response variable: ", object$response,"\n", sep = "")
+	if(object$response=='continuous'){cat("minimal mean absolute error: ",min(object$MEAN.ABS),"\n", sep = "")
+		cat("Minimal mean squared error: ",min(object$MEAN.SQU),"\n", sep = "")}
+	if(object$response=='nominal'){
+		cat("Minimal misclassification: ",min(object$MISCLASS),"\n", sep = "")}
+	if(object$response=='ordinal'){cat("minimal mean absolute error: ",min(object$MEAN.ABS),"\n", sep = "")
+		cat("Minimal mean squared error: ",min(object$MEAN.SQU),"\n", sep = "")
+		cat("Minimal misclassification: ",min(object$MISCLASS),"\n", sep = "")
+		}	
+	cat("Best kernel: ", object$best$kernel,"\n", sep = "")
+	cat("Best k: ", object$best$k,"\n", sep = "")	
+}
+
+
+plot.train.kknn <-function(x,...){
+	if(x$response=='continuous'){		
+		legend.text = colnames(x$MEAN.ABS)
+		m = 1:length(colnames(x$MEAN.ABS))
+		matplot(x$MEAN.SQU, xlab="k", ylab="mean squared error",pch = m,...)
+		xy <- par("usr")
+		legend(xy[2] - xinch(0.1), xy[4] - yinch(0.1), legend = legend.text, xjust = 1, yjust = 1,col=m,pch=m)
+		}
+	if(x$response=='ordinal'){
+		legend.text = colnames(x$MISCLASS)
+		m = 1:length(colnames(x$MISCLASS))
+		matplot(x$MEAN.ABS, xlab="k", ylab="mean absolute error",pch = m,...)
+		xy <- par("usr")
+		legend(xy[2] - xinch(0.1), xy[4] - yinch(0.1), legend = legend.text, xjust = 1, yjust = 1,col=m,pch=m)
+		}
+	if(x$response=='nominal'){
+		legend.text = colnames(x$MISCLASS)
+		m = 1:length(colnames(x$MISCLASS))
+		matplot(x$MISCLASS, xlab="k", ylab="misclassification",pch = m,...)
+		xy <- par("usr")
+		legend(xy[2] - xinch(0.1), xy[4] - yinch(0.1), legend = legend.text, xjust = 1, yjust = 1,col=m,pch=m)
+		}	
+}
+

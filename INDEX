@@ -1,0 +1,8 @@
+contr.dummy             Contrast Matrices
+glass                   Glass Identification Database
+ionosphere              Johns Hopkins University Ionosphere Database
+kknn                    Weighted k-Nearest Neighbor Classifier
+miete                   Munich Rent Standard Database (1994)
+simulation              Crossvalidation procedure to test prediction
+                        accuracy
+train.kknn              Training kknn
