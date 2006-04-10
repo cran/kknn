@@ -1,0 +1,13 @@
+		CHANGES IN KKNN 1.0.3
+
+
+NEW FEATURES
+
+  o new parameter ykernel: Window width of an y-kernel, 
+	especially for prediction of ordinal classes.
+
+BUG FIXES
+
+  o A bug was fixed in the kernel="rank" in kknn
+  o kernel  = "gaussian" did not work correctly: this has been fixed
+

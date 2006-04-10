@@ -5,12 +5,16 @@
 \alias{predict.kknn}
 \title{Weighted k-Nearest Neighbor Classifier }
 \description{
-Performs k-nearest neighbor classification of a test set using a training set. 
-For each row of the test set, the k nearest training set vectors (according to Minkowski distance) are found, 
-and the classification is done via the maximum of summed kernel densities. In addition even ordinal and continuous variables can be predicted.
+Performs k-nearest neighbor classification of a test set using a
+training set. For each row of the test set, the k nearest training
+set vectors (according to Minkowski distance) are found, and the 
+classification is done via the maximum of summed kernel densities. 
+In addition even ordinal and continuous variables can be predicted.
 }
 \usage{
-kknn(formula = formula(train), train, test, na.action = na.omit(), k = 7, distance = 2, kernel = "triangular", contrasts = c('unordered' = "contr.dummy", ordered = "contr.ordinal"))
+kknn(formula = formula(train), train, test, na.action = na.omit(), 
+	k = 7, distance = 2, kernel = "triangular", ykernel = NULL,
+	contrasts = c('unordered' = "contr.dummy", ordered = "contr.ordinal"))
 }
 \arguments{
   \item{formula}{A formula object.}
@@ -19,8 +23,9 @@ kknn(formula = formula(train), train, test, na.action = na.omit(), k = 7, distan
   \item{na.action}{A function which indicates what should happen when the data contain 'NA's.}
   \item{k}{Number of neighbors considered.}
   \item{distance}{Parameter of Minkowski distance.}
-  \item{kernel}{Kernel to use. Possible choices are "rectangular" (which is standard unweighted knn) , "triangular", "epanechnikov" (or beta(2,2)), 
+  \item{kernel}{Kernel to use. Possible choices are "rectangular" (which is standard unweighted knn), "triangular", "epanechnikov" (or beta(2,2)), 
 	"biweight" (or beta(3,3)), "triweight" (or beta(4,4)), "cos", "inv" and "gaussian".} 
+  \item{ykernel} {Window width of an y-kernel, especially for prediction of ordinal classes.}  	
   \item{contrasts}{A vector containing the 'unordered' and 'ordered' contrasts to use.}	
 }
 \details{
@@ -42,7 +47,9 @@ kknn(formula = formula(train), train, test, na.action = na.omit(), k = 7, distan
   \item{terms}{The 'terms' object used.}
 }
 \references{Hechenbichler K. and Schliep K.P. (2004)  \emph{Weighted k-Nearest-Neighbor Techniques and Ordinal Classification}, Discussion Paper 399, SFB 386, Ludwig-Maximilians University Munich
-(\url{http://www.stat.uni-muenchen.de/sfb386/papers/dsp/paper399.ps})}
+(\url{http://www.stat.uni-muenchen.de/sfb386/papers/dsp/paper399.ps})
+
+Hechenbichler K. (2005)  \emph{Ensemble-Techniken und ordinale Klassifikation}, PhD-thesis}
 \author{ Klaus P. Schliep \email{K.P.Schliep@massey.ac.nz} \cr Klaus Hechenbichler}
  
 \seealso{ \code{\link[kknn]{train.kknn}}, \code{\link[kknn]{simulation}}, \code{\link[class]{knn}} and \code{\link[class]{knn1}} }
@@ -51,24 +58,29 @@ library(kknn)
 
 data(iris)
 m <- dim(iris)[1]
-val <- sample(1:m, size = round(m/3), replace = FALSE, prob = rep(1/m, m)) 
+val <- sample(1:m, size = round(m/3), replace = FALSE, 
+	prob = rep(1/m, m)) 
 iris.learn <- iris[-val,]
 iris.valid <- iris[val,]
-iris.kknn <- kknn(Species~., iris.learn, iris.valid, distance = 1, kernel = "triangular")
+iris.kknn <- kknn(Species~., iris.learn, iris.valid, distance = 1,
+	kernel = "triangular")
 summary(iris.kknn)
 fit <- fitted(iris.kknn)
 table(iris.valid$Species, fit)
 pcol <- as.character(as.numeric(iris.valid$Species))
-pairs(iris.valid[1:4], pch = pcol, col = c("green3", "red")[(iris.valid$Species != fit)+1])
+pairs(iris.valid[1:4], pch = pcol, col = c("green3", "red")
+	[(iris.valid$Species != fit)+1])
 
 data(ionosphere)
 ionosphere.learn <- ionosphere[1:200,]
 ionosphere.valid <- ionosphere[-c(1:200),]
 fit.kknn <- kknn(class ~ ., ionosphere.learn, ionosphere.valid)
 table(ionosphere.valid$class, fit.kknn$fit)
-(fit.train1 <- train.kknn(class ~ ., ionosphere.learn, kmax = 15, kernel = c("triangular", "rectangular", "epanechnikov"), distance = 1))
+(fit.train1 <- train.kknn(class ~ ., ionosphere.learn, kmax = 15, 
+	kernel = c("triangular", "rectangular", "epanechnikov"), distance = 1))
 table(predict(fit.train1, ionosphere.valid), ionosphere.valid$class)
-(fit.train2 <- train.kknn(class ~ ., ionosphere.learn, kmax = 15, kernel = c("triangular", "rectangular", "epanechnikov"), distance = 2))
+(fit.train2 <- train.kknn(class ~ ., ionosphere.learn, kmax = 15, 
+	kernel = c("triangular", "rectangular", "epanechnikov"), distance = 2))
 table(predict(fit.train2, ionosphere.valid), ionosphere.valid$class)
 }
 \keyword{ classif }

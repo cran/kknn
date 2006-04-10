@@ -29,19 +29,22 @@ simulation <- function(formula, data, runs = 10, train = TRUE, k = 11, ...)
      if(is.numeric(y) | is.ordered(y)) MEAN.SQU[i]<-sum((as.numeric(ytmp) -
 		as.numeric(pred))^2)/dim(valid)[1]
      }  
-   if(is.numeric(y)){ result <- matrix(data=c(mean(MEAN.ABS), sd(MEAN.ABS),
+   if(is.numeric(y)){ 
+   		result <- matrix(data=c(mean(MEAN.ABS), sd(MEAN.ABS),
 		mean(MEAN.SQU), sd(MEAN.SQU)), nrow=2, ncol=2)
 		colnames(result)<-c("absolute distance", "squared distance")
 		rownames(result)<-c("mean", "sd")                         
    }
-   if(is.ordered(y)){ result<-matrix(data=c(mean(MISCLASS), sd(MISCLASS), 
+   if(is.ordered(y)){ 
+   		result<-matrix(data=c(mean(MISCLASS), sd(MISCLASS), 
 		mean(MEAN.ABS), sd(MEAN.ABS),
 		mean(MEAN.SQU), sd(MEAN.SQU)), 
 		nrow=2, ncol=3)
 		colnames(result)<-c("misclassification","absolute distance", "squared distance")
 		rownames(result)<-c("Mean", "sd")
 		} 
-   if(is.factor(y) & !is.ordered(y)){ result<-matrix(data=c(mean(MISCLASS), sd(MISCLASS)),	nrow=2, ncol=1)   
+   if(is.factor(y) & !is.ordered(y)){ 
+		result<-matrix(data=c(mean(MISCLASS), sd(MISCLASS)),	nrow=2, ncol=1)   
    		colnames(result)<-"misclassification"
    		rownames(result)<-c("mean", "sd")
    		} 
@@ -94,9 +97,9 @@ contr.metric <- function(n, contrasts = TRUE)
 
 
 kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k = 7, distance = 2, 
-    kernel = "triangular",contrasts=c('unordered'="contr.dummy",ordered="contr.ordinal")) 
+    kernel = "triangular", ykernel = NULL, contrasts=c('unordered'="contr.dummy",ordered="contr.ordinal")) 
 {
-
+if(is.null(ykernel)) ykernel=0
 weight.y = function(l=1,diff = 0){
 	k=diff+1
     result=matrix(0,l,l)
@@ -186,13 +189,11 @@ if(response=="continuous"){
 #	
 # Kernels
 #	
-	if (kernel=="rank") W <- (j+1)-t(apply(as.matrix(D),1,rank))
+	if (kernel=="rank") W <- (k+1)-t(apply(as.matrix(D),1,rank))
 	if (kernel=="inv") W <- 1/W
-	if (kernel=="rectangular"){ W <- matrix(1,nrow = p, ncol = k)
-			D
-		}
-    if (kernel=="triangular") W <- 1-W	 	
-    if (kernel=="epanechnikov") W <- 0.75*(1-W^2) 	
+	if (kernel=="rectangular") W <- matrix(1,nrow = p, ncol = k)
+	if (kernel=="triangular") W <- 1-W	 	
+	if (kernel=="epanechnikov") W <- 0.75*(1-W^2)
 	if (kernel=="biweight") W <- dbeta((W+1)/2,3,3)	 	
 	if (kernel=="triweight") W <- dbeta((W+1)/2,4,4)	 	
 	if (kernel=="cos") W <- cos(W*pi/2)
@@ -200,8 +201,8 @@ if(response=="continuous"){
 	if (kernel=="gaussian"){
 		alpha=1/(2*(k+1))
 		qua=abs(qnorm(alpha))
-		sdv=maxdist/qua
-		apply(W,2,dnorm,sd=sdv)
+		W=W*qua
+		W= apply(W,2,dnorm,sd=1)
 	}
 
 if(response!="continuous"){
@@ -217,7 +218,7 @@ if(response!="continuous"){
 if (response=="ordinal") {
    
 	blub = length(lev)
- 	weightClass= weightClass%*%weight.y(blub,0)
+ 	weightClass= weightClass%*%weight.y(blub,ykernel)
     weightClass <- weightClass/rowSums(weightClass)	
     weightClass <- t(apply(weightClass, 1, cumsum))
     colnames(weightClass) <- lev
@@ -286,31 +287,32 @@ predict.train.kknn <- function (object, newdata, ...)
 }
 
 
-train.kknn <- function (formula, data, kmax = 11, kernel = NULL, distance = 2, contrasts=c('unordered'="contr.dummy",ordered="contr.ordinal"), ...) 
+train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, ykernel = NULL, 
+    contrasts = c(unordered = "contr.dummy", ordered = "contr.ordinal"), 
+    ...) 
 {
-
-weight.y = function(l=1,diff = 0){
-	k=diff+1
-    result=matrix(0,l,l)
-    diag(result)=k
-    for(i in 1:(k-1)){
-        for(j in 1:(l-i)){
-                result[j,j+i]=k-i
-                result[j+i,j]=k-i
-                }
+	if(is.null(ykernel)) ykernel=0
+    weight.y = function(l = 1, diff = 0) {
+        k = diff + 1
+        result = matrix(0, l, l)
+        diag(result) = k
+        for (i in 1:(k - 1)) {
+            for (j in 1:(l - i)) {
+                result[j, j + i] = k - i
+                result[j + i, j] = k - i
+            }
         }
-        result  
-}
+        result
+    }
 
-
-	use.priori = FALSE
+    use.priori = FALSE
     call <- match.call()
     mf <- model.frame(formula, data = data)
     mt <- attr(mf, "terms")
     y <- model.response(mf)
     cl <- model.response(mf)
     old.contrasts <- getOption("contrasts")
-	options(contrasts = contrasts)
+    options(contrasts = contrasts)
     mm.data <- model.matrix(mt, mf)
     if (is.null(kernel)) 
         kernel = "triangular"
@@ -320,8 +322,6 @@ weight.y = function(l=1,diff = 0){
     MEAN.ABS <- matrix(nrow = kmax, ncol = r, dimnames = list(c(1:kmax), 
         kernel))
     MEAN.SQU <- matrix(nrow = kmax, ncol = r, dimnames = list(c(1:kmax), 
-        kernel))
-    RSquare <- matrix(nrow = kmax, ncol = r, dimnames = list(c(1:kmax), 
         kernel))
     m <- dim(data)[1]
     prediction <- y
@@ -341,12 +341,10 @@ weight.y = function(l=1,diff = 0){
             ind == i])))))
         we[ind == i] = 1/sum(ind == i)
     }
-    we[d.sd==0]=0
-    d.sd[d.sd==0]=1
-    
+    we[d.sd == 0] = 0
+    d.sd[d.sd == 0] = 1
     mm.data <- t(t(mm.data)/d.sd)
     mm.data[, 1] <- mm.data[, 1] + runif(m, 0, 1e-04)
- 
     dmtmp <- .C("dm", as.double(mm.data), as.double(mm.data), 
         as.integer(m), as.integer(p), as.integer(q), dm = as.double(D), 
         cl = as.integer(CL), k = as.integer(kmax + 2), as.double(distance), 
@@ -354,10 +352,10 @@ weight.y = function(l=1,diff = 0){
     D <- matrix(dmtmp$dm, nrow = p, ncol = kmax + 2)
     C <- matrix(dmtmp$cl, nrow = p, ncol = kmax + 2)
     C <- C + 1
-    CL <- matrix(cl[C], nrow = p, ncol = kmax+2)
-    D <- D[,-1]
-    C <- C[,-1]
-    CL <- CL[,-1]
+    CL <- matrix(cl[C], nrow = p, ncol = kmax + 2)
+    D <- D[, -1]
+    C <- C[, -1]
+    CL <- CL[, -1]
     if (is.ordered(y)) {
         response <- "ordinal"
         lev <- levels(y)
@@ -385,35 +383,35 @@ weight.y = function(l=1,diff = 0){
         ynull <- matrix(rep(colMeans(y1), each = m), m, l)
     if (response == "continuous") 
         ynull <- rep(mean(y), m)
+
     for (j in 1:(kmax)) {
- 		maxdist <- D[, j + 1]
+        maxdist <- D[, j + 1]
+        V <- D[, 1:j]/sapply(maxdist, "max", 1e-06)
+        V <- pmin(V, 1 - (1e-06))
+        V <- pmax(V, 1e-06)
         for (s in 1:r) {
-            W <- D[, 1:j]/sapply(maxdist, "max", 1e-06)
-            W <- pmin(W, 1 - (1e-06))
-            W <- pmax(W, 1e-06)
             if (kernel[s] == "rank") 
-                W <- (j + 1) - t(apply(as.matrix(D[, 1:j]), 1, 
-                  rank))
+                W <- (j + 1) - t(apply(as.matrix(V), 1, rank))
             if (kernel[s] == "inv") 
-                W <- 1/W
+                W <- 1/V
             if (kernel[s] == "rectangular") 
                 W <- matrix(1, nrow = m, ncol = j)
             if (kernel[s] == "triangular") 
-                W <- 1 - W
+                W <- 1 - V
             if (kernel[s] == "epanechnikov") 
-                W <- 0.75 * (1 - W^2)
+                W <- 0.75 * (1 - V^2)
             if (kernel[s] == "biweight") 
-                W <- dbeta((W + 1)/2, 3, 3)
+                W <- dbeta((V + 1)/2, 3, 3)
             if (kernel[s] == "triweight") 
-                W <- dbeta((W + 1)/2, 4, 4)
+                W <- dbeta((V + 1)/2, 4, 4)
             if (kernel[s] == "cos") 
-                W <- cos(W * pi/2)
+                W <- cos(V * pi/2)
             if (kernel[s] == "gaussian") {
-                v <- j + 1
-                alpha = 1/(2 * v)
-                qua = abs(qnorm(alpha))
-                sdv = maxdist/qua
-                apply(as.matrix(W), 2, dnorm, sd = sdv)
+            	v <- j + 1
+         	    alpha = 1/(2 * v)
+             	qua = abs(qnorm(alpha))
+             	W = V*qua
+            	W = apply(as.matrix(W), 2, dnorm)
             }
             W <- matrix(W, m, j)
             if (response != "continuous") {
@@ -430,51 +428,36 @@ weight.y = function(l=1,diff = 0){
                 colnames(weightClass) <- lev
             }
             if (response == "ordinal") {
-				blub = length(lev)
-				weightClass= weightClass%*%weight.y(blub,0)
-    			weightClass <- weightClass/rowSums(weightClass)	
-		      	weightClass <- t(apply(weightClass, 1, cumsum))
- 		      	colnames(weightClass) <- lev
-                                       
-                fit <- numeric(m)
-                for (i in 1:m) fit[i] <- min((1:l)[weightClass[i, 
-                  ] >= 0.5])
+                blub = length(lev)
+                weightClass = weightClass %*% weight.y(blub, ykernel)
+                weightClass <- weightClass/rowSums(weightClass)
+                weightClass <- t(apply(weightClass, 1, cumsum))
+                colnames(weightClass) <- lev
+                fit <- numeric(m)             
+				fit <- ((l+1)-(weightClass >= 0.5)%*%(numeric(l)+1))
                 fit <- ordered(fit, levels = 1:l, labels = lev)
             }
             if (response == "nominal") {
-                fit <- apply(weightClass, 1, order, decreasing = TRUE)[1,]
+				lwc = length(weightClass)
+                fit <- apply(weightClass, 1, order, decreasing = TRUE)[1, ]
                 fit <- factor(fit, levels = 1:l, labels = lev)
-                
-                if(kernel[s]=="rectangular" && j>1){		
-					blub <- apply(weightClass, 1, rank, ties.method = "max")
-					indices = (1:p)[colSums(blub==l)>1]
-					blub=t(blub)
-					nM = matrix(0,p,l) 
-					colnames(nM)=lev
-					for(i in 1:l) nM[,i] = apply((CL[,1:j]==lev[i]) %*% diag(1:j) ,1,max)
-
-					nM = (blub==l)*nM  
-					nM[nM==0] <- j+1
-					fitv = numeric(p)
-					for(i in indices) fitv[i]=which(nM[i,]==min(nM[i,]))
-					fit[indices] <- factor(fitv[indices], levels = 1:l, labels = lev)
-				}                
+                if (kernel[s] == "rectangular" && j > 1) {
+                 	fit <- apply(weightClass+runif(lwc,max=1/(2*j)), 1, order, decreasing = TRUE)[1, ]
+                	fit <- factor(fit, levels = 1:l, labels = lev)
+                }
             }
             if (response == "continuous") {
                 fit <- rowSums(W * (matrix(CL[, 1:j], m, j)))/sapply(rowSums(matrix(W, 
                   m, j)), "max", 1e-06)
                 weightClass = fit
             }
-            
-		    attr(fit,"kernel") = kernel[s] 	
-			attr(fit,"k") = j  				
-            
+            attr(fit, "kernel") = kernel[s]
+            attr(fit, "k") = j
             P[[j + (s - 1) * kmax]] = fit
-            RSquare[j, s] <- 1 - sum((weightClass - y1)^2)/sum((ynull - 
-                y1)^2)
+
         }
     }
-    sum((ynull - y1)^2)
+
     for (j in 1:kmax) {
         for (s in 1:r) {
             if (is.factor(y)) 
@@ -487,20 +470,24 @@ weight.y = function(l=1,diff = 0){
                   (s - 1) * kmax]]))^2)/m
         }
     }
-    
-    if(response=='nominal')best <- which(MISCLASS==min(MISCLASS),arr.ind=TRUE)
-    if(response=='ordinal')best <- which(MEAN.ABS==min(MEAN.ABS),arr.ind=TRUE)
-    if(response=='continuous')best <- which(MEAN.SQU==min(MEAN.SQU),arr.ind=TRUE)
-    best.parameters = list(kernel=kernel[best[1,2]],k=best[1,1])
-    
-    old.contrasts<-getOption('contrasts')
-      
+    if (response == "nominal") 
+        best <- which(MISCLASS == min(MISCLASS), arr.ind = TRUE)
+    if (response == "ordinal") 
+        best <- which(MEAN.ABS == min(MEAN.ABS), arr.ind = TRUE)
+    if (response == "continuous") 
+        best <- which(MEAN.SQU == min(MEAN.SQU), arr.ind = TRUE)
+    best.parameters = list(kernel = kernel[best[1, 2]], k = best[1, 
+        1])
+    old.contrasts <- getOption("contrasts")
     result = list(MISCLASS = MISCLASS, MEAN.ABS = MEAN.ABS, MEAN.SQU = MEAN.SQU, 
-    	fitted.values = P,  best.parameters=best.parameters,
-        response = response, distance = distance, call = call, terms = mt, data = data)        
-    class(result) = c("train.kknn","kknn")
+        fitted.values = P, best.parameters = best.parameters, 
+        response = response, distance = distance, call = call, 
+        terms = mt, data = data)
+    class(result) = c("train.kknn", "kknn")
     result
 }
+
+
 
 
 print.train.kknn <- function(x, ...)

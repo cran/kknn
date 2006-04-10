@@ -2,8 +2,8 @@
 \alias{simulation}
 \title{ Crossvalidation procedure to test prediction accuracy }
 \description{
-  \code{simulation} tests prediction accuracy of regression and/or classification techniques via simulation 
-  of different test sets.
+\code{simulation} tests prediction accuracy of regression and/or 
+classification techniques via simulation of different test sets.
 }
 \usage{
 simulation(formula, data, runs = 10, train = TRUE, k = 11, ...)

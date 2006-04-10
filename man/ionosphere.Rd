@@ -20,10 +20,11 @@ signal.
 }
 \usage{data(ionosphere)}
 \format{
-  A data frame with 351 observations on the following 35 variables.
-  The first 34 continuous covariables are used for the prediction.
-  The 35th attribute is either \code{g} ("good") or \code{b} ("bad") according to the definition
-  summarized above. This is a binary classification task.
+A data frame with 351 observations on the following 35 variables.
+The first 34 continuous covariables are used for the prediction.
+The 35th attribute is either \code{g} ("good") or \code{b} ("bad") 
+according to the definition summarized above. This is a binary 
+classification task.
 }
 \source{
   % \itemize{\item 
