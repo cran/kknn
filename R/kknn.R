@@ -113,8 +113,6 @@ weight.y = function(l=1,diff = 0){
         result  
 }
 
-
-	use.priori=FALSE
 	ca <- match.call()
 	response = NULL
 	old.contrasts<-getOption('contrasts')
@@ -209,8 +207,6 @@ if(response!="continuous"){
     for (i in 1:l) {
 		weightClass[, i] <- rowSums(W * (CL == lev[i]))	
     }
-	if(use.priori){priori <- sapply(1-(summary(y)/m),'max',1e-6)
-		weightClass <- weightClass %*% diag(priori)}
     weightClass <- weightClass/rowSums(weightClass)	
 	colnames(weightClass) <- lev
     }
@@ -305,7 +301,6 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
         result
     }
 
-    use.priori = FALSE
     call <- match.call()
     mf <- model.frame(formula, data = data)
     mt <- attr(mf, "terms")
@@ -418,11 +413,6 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
                 for (i in 1:l) {
                   weightClass[, i] <- rowSums(W * (matrix(CL[, 
                     1:j], m, j) == lev[i]))
-                }
-                if (use.priori) {
-                  priori <- sapply(1 - (summary(y)/m), "max", 
-                    1e-06)
-                  weightClass <- weightClass %*% diag(priori)
                 }
                 weightClass <- weightClass/rowSums(weightClass)
                 colnames(weightClass) <- lev

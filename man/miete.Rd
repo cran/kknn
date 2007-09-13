@@ -13,10 +13,10 @@ dataset contains the data of 1082 households interviewed for the munich rent sta
 }
 \usage{data(miete)}
 \format{
-  A data frame with 1082 observations on the following 18 variables.
-  \describe{
+A data frame with 1082 observations on the following 18 variables.
+\describe{
     \item{nm}{Net rent in DM.}
-    \item{wfl}{Floor space in m².}
+    \item{wfl}{Floor space in sqm.}
     \item{bj}{Year of construction.}
     \item{bad0}{Bathroom in apartment?\cr
 1 : no\cr
@@ -52,11 +52,11 @@ dataset contains the data of 1082 households interviewed for the munich rent sta
 6 : built after 1983  
 }
     \item{wflkat}{Floor space category (wfl categorized):\cr 
-1 : less than 50 m²\cr 
-2 : between 51 m² and 80 m²\cr
-3 : at least 81 m²  
+1 : less than 50 sqm\cr 
+2 : between 51 sqm and 80 sqm\cr
+3 : at least 81 sqm  
 }
-    \item{nmqm}{Net rent per m².}
+    \item{nmqm}{Net rent per sqm.}
     \item{rooms}{Number of rooms in household.}
 
   \item{nmkat}{Net rent category (nm categorized):\cr      
@@ -78,16 +78,10 @@ dataset contains the data of 1082 households interviewed for the munich rent sta
 2 : average\cr
 3 : good
 }
-
- 
 }
-    
-    
-    
-  }
 }
 \source{
-Fahrmeir, L. / Künstler, R. / Pigeot, I. / Tutz, G. (1997): \emph{Statistik: der Weg zur Datenanalyse}, Springer, Berlin. 
+Fahrmeir, L., Kuenstler, R., Pigeot, I. und Tutz, G. (1997): \emph{Statistik: der Weg zur Datenanalyse}, Springer, Berlin. 
 \url{http://www.stat.uni-muenchen.de/service/datenarchiv}
 
 The data were converted to R format by \email{K.P.Schliep@massey.ac.nz}.
