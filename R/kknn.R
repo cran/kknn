@@ -200,8 +200,9 @@ if(response=="continuous"){
 		alpha=1/(2*(k+1))
 		qua=abs(qnorm(alpha))
 		W=W*qua
-		W= apply(W,2,dnorm,sd=1)
-	}
+        W = dnorm(W, sd = 1)
+    }
+    W <- matrix(W, p, k)
 
 if(response!="continuous"){
     for (i in 1:l) {
@@ -319,7 +320,6 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
     MEAN.SQU <- matrix(nrow = kmax, ncol = r, dimnames = list(c(1:kmax), 
         kernel))
     m <- dim(data)[1]
-    prediction <- y
     CL <- matrix(nrow = m, ncol = kmax + 2)
     D <- matrix(nrow = m, ncol = kmax + 2)
     P <- list(kmax * r)
@@ -367,17 +367,12 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
         l <- length(lev)
         weightClass <- matrix(0, m, l)
     }
-    if (response == "continuous") 
-        y1 = y
-    if (response == "nominal") 
-        y1 = model.matrix(~-1 + y, contrasts = list(y = "contr.dummy"))
-    if (response == "ordinal") 
-        y1 = t(apply(model.matrix(~-1 + y, contrasts = list(y = "contr.dummy")), 
-            1, cumsum))
-    if (response != "continuous") 
-        ynull <- matrix(rep(colMeans(y1), each = m), m, l)
-    if (response == "continuous") 
-        ynull <- rep(mean(y), m)
+#    if (response == "continuous") y1 = y
+#    if (response == "nominal") y1 = model.matrix(~-1 + y, contrasts = list(y = "contr.dummy"))
+#    if (response == "ordinal") 
+#        y1 = t(apply(model.matrix(~-1 + y, contrasts = list(y = "contr.dummy")), 1, cumsum))
+#    if (response != "continuous") ynull <- matrix(rep(colMeans(y1), each = m), m, l)
+#    if (response == "continuous") ynull <- rep(mean(y), m)
 
     for (j in 1:(kmax)) {
         maxdist <- D[, j + 1]
@@ -468,7 +463,9 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
         best <- which(MEAN.SQU == min(MEAN.SQU), arr.ind = TRUE)
     best.parameters = list(kernel = kernel[best[1, 2]], k = best[1, 
         1])
-    old.contrasts <- getOption("contrasts")
+
+    options('contrasts'=old.contrasts)
+    
     result = list(MISCLASS = MISCLASS, MEAN.ABS = MEAN.ABS, MEAN.SQU = MEAN.SQU, 
         fitted.values = P, best.parameters = best.parameters, 
         response = response, distance = distance, call = call, 
