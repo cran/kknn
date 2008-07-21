@@ -339,7 +339,6 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
     we[d.sd == 0] = 0
     d.sd[d.sd == 0] = 1
     mm.data <- t(t(mm.data)/d.sd)
-    mm.data[, 1] <- mm.data[, 1] + runif(m, 0, 1e-04)
     dmtmp <- .C("dm", as.double(mm.data), as.double(mm.data), 
         as.integer(m), as.integer(p), as.integer(q), dm = as.double(D), 
         cl = as.integer(CL), k = as.integer(kmax + 2), as.double(distance), 
@@ -367,13 +366,6 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
         l <- length(lev)
         weightClass <- matrix(0, m, l)
     }
-#    if (response == "continuous") y1 = y
-#    if (response == "nominal") y1 = model.matrix(~-1 + y, contrasts = list(y = "contr.dummy"))
-#    if (response == "ordinal") 
-#        y1 = t(apply(model.matrix(~-1 + y, contrasts = list(y = "contr.dummy")), 1, cumsum))
-#    if (response != "continuous") ynull <- matrix(rep(colMeans(y1), each = m), m, l)
-#    if (response == "continuous") ynull <- rep(mean(y), m)
-
     for (j in 1:(kmax)) {
         maxdist <- D[, j + 1]
         V <- D[, 1:j]/sapply(maxdist, "max", 1e-06)
@@ -426,10 +418,6 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
 				lwc = length(weightClass)
                 fit <- apply(weightClass, 1, order, decreasing = TRUE)[1, ]
                 fit <- factor(fit, levels = 1:l, labels = lev)
-                if (kernel[s] == "rectangular" && j > 1) {
-                 	fit <- apply(weightClass+runif(lwc,max=1/(2*j)), 1, order, decreasing = TRUE)[1, ]
-                	fit <- factor(fit, levels = 1:l, labels = lev)
-                }
             }
             if (response == "continuous") {
                 fit <- rowSums(W * (matrix(CL[, 1:j], m, j)))/sapply(rowSums(matrix(W, 
@@ -473,8 +461,6 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
     class(result) = c("train.kknn", "kknn")
     result
 }
-
-
 
 
 print.train.kknn <- function(x, ...)
