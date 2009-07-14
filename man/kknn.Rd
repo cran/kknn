@@ -25,7 +25,7 @@ kknn(formula = formula(train), train, test, na.action = na.omit(),
   \item{distance}{Parameter of Minkowski distance.}
   \item{kernel}{Kernel to use. Possible choices are "rectangular" (which is standard unweighted knn), "triangular", "epanechnikov" (or beta(2,2)), 
 	"biweight" (or beta(3,3)), "triweight" (or beta(4,4)), "cos", "inv" and "gaussian".} 
-  \item{ykernel} {Window width of an y-kernel, especially for prediction of ordinal classes.}  	
+  \item{ykernel}{Window width of an y-kernel, especially for prediction of ordinal classes.}  	
   \item{contrasts}{A vector containing the 'unordered' and 'ordered' contrasts to use.}	
 }
 \details{
