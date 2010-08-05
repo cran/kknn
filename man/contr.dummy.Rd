@@ -27,7 +27,7 @@ and a vector of length \emph{n} for \code{contr.metric}.
 }
 \references{Hechenbichler K. and Schliep K.P. (2004)  \emph{Weighted k-Nearest-Neighbor Techniques and Ordinal Classification}, Discussion Paper 399, SFB 386, Ludwig-Maximilians University Munich
 (\url{http://www.stat.uni-muenchen.de/sfb386/papers/dsp/paper399.ps})}
-\author{Klaus P. Schliep \email{K.P.Schliep@massey.ac.nz} }
+\author{Klaus P. Schliep \email{klaus.schliep@snv.jussieu.fr} }
  
 \seealso{\code{\link[stats]{contrasts}}, \code{\link[stats:contrast]{contr.poly}} and \code{\link[MASS]{contr.sdif}} }
 \examples{

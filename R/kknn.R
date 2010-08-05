@@ -120,31 +120,34 @@ weight.y = function(l=1,diff = 0){
 
     mf <- model.frame(formula, data = train)
     mt <- attr(mf, "terms")
-
+    formula2 <- as.formula(mf)
+    formula2[[2]] <- NULL
+    mt2 <- terms.formula(formula2, data=train)
     cl <- model.response(mf)
 
-if(is.ordered(cl)) {response<-"ordinal"
-	 lev <- levels(cl)
+    if(is.ordered(cl)) {
+        response<-"ordinal"
+        lev <- levels(cl)
 	}
-if(is.numeric(cl)) response<-"continuous"
-if(is.factor(cl) & !is.ordered(cl)){
+    if(is.numeric(cl)) response<-"continuous"
+    if(is.factor(cl) & !is.ordered(cl)){
 	response<-"nominal"
-	 lev <- levels(cl)
+	lev <- levels(cl)
 	}
 	
-if(distance<=0)stop('distance must >0')
-if(k<=0)stop('k must >0')
+    if(distance<=0)stop('distance must >0')
+    if(k<=0)stop('k must >0')
 
-   learn <- model.matrix(mt, mf)
-   valid <-model.matrix(mt,test)
+    learn <- model.matrix(mt, mf)
+    valid <-model.matrix(mt2,test)
 
     m <- dim(learn)[1]
     p <- dim(valid)[1]
     q <- dim(learn)[2]
-	D <- matrix(0, nrow = p, ncol = k+1)
+    D <- matrix(0, nrow = p, ncol = k+1)
     CL <- matrix(0, nrow = p, ncol = k+1)
    
-   	ind <- attributes(valid)$assign
+    ind <- attributes(valid)$assign
    	
     d.sd<-numeric(length(ind))+1
     we<-numeric(length(ind))+1
@@ -155,15 +158,15 @@ if(k<=0)stop('k must >0')
     	}
     
     we[d.sd==0]=0
-  	d.sd[d.sd==0]=1
+    d.sd[d.sd==0]=1
   
     learn <- t(t(learn)/d.sd)
     valid <- t(t(valid)/d.sd)
 
-	dmtmp <- .C("dm", as.double(learn), as.double(valid), 
-    	as.integer(m), as.integer(p), as.integer(q), 
-    	dm=as.double(D), cl=as.integer(CL), k=as.integer(k+1), 
-    	as.double(distance),as.double(we),PACKAGE='kknn')
+    dmtmp <- .C("dm", as.double(learn), as.double(valid), 
+    as.integer(m), as.integer(p), as.integer(q), 
+    dm=as.double(D), cl=as.integer(CL), k=as.integer(k+1), 
+    as.double(distance),as.double(we),PACKAGE='kknn')
     
     D <- matrix(dmtmp$dm, nrow = p, ncol = k + 1)
     C <- matrix(dmtmp$cl, nrow = p, ncol = k + 1)
@@ -172,34 +175,34 @@ if(k<=0)stop('k must >0')
     C <- C[, 1:k]+1
     CL <- matrix(cl[C], nrow = p, ncol = k)     
     
-if(response!="continuous"){
-    l <- length(lev)
-    weightClass <- matrix(0, p, l)
-}
-if(response=="continuous"){
-     weightClass <- NULL
-}
+    if(response!="continuous"){
+        l <- length(lev)
+        weightClass <- matrix(0, p, l)
+    }
+    if(response=="continuous"){
+        weightClass <- NULL
+    }
 
-	W <- D/sapply(maxdist,'max',1e-6)
-	W <- pmin(W,1-(1e-6))
-	W <- pmax(W,1e-6)
+    W <- D/sapply(maxdist,'max',1e-6)
+    W <- pmin(W,1-(1e-6))
+    W <- pmax(W,1e-6)
 
 #	
 # Kernels
 #	
-	if (kernel=="rank") W <- (k+1)-t(apply(as.matrix(D),1,rank))
-	if (kernel=="inv") W <- 1/W
-	if (kernel=="rectangular") W <- matrix(1,nrow = p, ncol = k)
-	if (kernel=="triangular") W <- 1-W	 	
-	if (kernel=="epanechnikov") W <- 0.75*(1-W^2)
-	if (kernel=="biweight") W <- dbeta((W+1)/2,3,3)	 	
-	if (kernel=="triweight") W <- dbeta((W+1)/2,4,4)	 	
-	if (kernel=="cos") W <- cos(W*pi/2)
-	if (kernel=="triweights") W <- 1
-	if (kernel=="gaussian"){
-		alpha=1/(2*(k+1))
-		qua=abs(qnorm(alpha))
-		W=W*qua
+    if (kernel=="rank") W <- (k+1)-t(apply(as.matrix(D),1,rank))
+    if (kernel=="inv") W <- 1/W
+    if (kernel=="rectangular") W <- matrix(1,nrow = p, ncol = k)
+    if (kernel=="triangular") W <- 1-W	 	
+    if (kernel=="epanechnikov") W <- 0.75*(1-W^2)
+    if (kernel=="biweight") W <- dbeta((W+1)/2,3,3)	 	
+    if (kernel=="triweight") W <- dbeta((W+1)/2,4,4)	 	
+    if (kernel=="cos") W <- cos(W*pi/2)
+    if (kernel=="triweights") W <- 1
+    if (kernel=="gaussian"){
+	alpha=1/(2*(k+1))
+	qua=abs(qnorm(alpha))
+	W=W*qua
         W = dnorm(W, sd = 1)
     }
     W <- matrix(W, p, k)
@@ -214,8 +217,8 @@ if(response!="continuous"){
     
 if (response=="ordinal") {
    
-	blub = length(lev)
- 	weightClass= weightClass%*%weight.y(blub,ykernel)
+    blub = length(lev)
+    weightClass= weightClass%*%weight.y(blub,ykernel)
     weightClass <- weightClass/rowSums(weightClass)	
     weightClass <- t(apply(weightClass, 1, cumsum))
     colnames(weightClass) <- lev

@@ -1,3 +1,11 @@
+		CHANGES IN KKNN 1.0.8
+
+BUG FIXES
+
+  o the data.frame for the training data set does not have to contain the 
+    response variable (suggested by Carlos J. Gil Bellosta)  
+
+
 		CHANGES IN KKNN 1.0.5
 
 BUG FIXES
