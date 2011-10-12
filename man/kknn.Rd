@@ -50,7 +50,7 @@ kknn(formula = formula(train), train, test, na.action = na.omit(),
 (\url{http://www.stat.uni-muenchen.de/sfb386/papers/dsp/paper399.ps})
 
 Hechenbichler K. (2005)  \emph{Ensemble-Techniken und ordinale Klassifikation}, PhD-thesis}
-\author{ Klaus P. Schliep \email{klaus.schliep@snv.jussieu.fr} \cr Klaus Hechenbichler}
+\author{ Klaus P. Schliep \email{klaus.schliep@gmail.com} \cr Klaus Hechenbichler}
  
 \seealso{ \code{\link[kknn]{train.kknn}}, \code{\link[kknn]{simulation}}, \code{\link[class]{knn}} and \code{\link[class]{knn1}} }
 \examples{

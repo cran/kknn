@@ -1,6 +1,6 @@
 /*****************************************************************/
 /*
- *  Copyright (C)2009 Klaus Schliep
+ *  Copyright (C)2009-2011 Klaus Schliep
  *               
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -26,27 +26,106 @@
 #include <R_ext/Utils.h>
 
 
-void dm(double *learn, double *valid, int *n, int *m, int *p, double *dm, int *cl, int *k, double *mink, double *weights){
-int i, j, l, t; 
-double tmp, *dvec;
-int *cvec;
-cvec = (int *) R_alloc((*n), sizeof(int));
-dvec = (double *) R_alloc((*n), sizeof(double));
 
-for(j=0;j<(*m);j++){
-	for(i=0;i<*n;i++){
-		tmp=0.0;
-		for(l=0;l<*p;l++){
-			tmp+=pow(fabs(learn[i+l*n[0]]-valid[j+l*m[0]]),*mink)* weights[l];
-			}
-		dvec[i]=pow(tmp,(1.0/(*mink)));
-		cvec[i]=i;     
-		}
-	rsort_with_index(dvec, cvec, *n);
-	for(t=0;t<*k;t++){
-		cl[j+t * *m]=cvec[t];
-		dm[j+t * *m]=dvec[t];
-		}
+#define MIN(x,y)  (((x)<(y)) ?    (x)  : (y))
+#define MAX(x,y)  (((x)>(y)) ?    (x)  : (y))
+
+double eps = 1.0e-8, big = 1.0e300;
+
+
+void dm(double *learn, double *valid, int *n, int *m, int *p, double *dm, int *cl, int *k, double *mink, double *weights){
+    int i, j, l, t, nn, ii, kk; 
+    double tmp, *dvec, maxD;
+    int *cvec;
+
+    kk = MAX(10L, *k);
+    kk = MIN(kk, *n);
+    nn = MIN(2L*kk, *n);
+
+    cvec = (int *) R_alloc(nn, sizeof(int));
+    dvec = (double *) R_alloc(nn, sizeof(double));
+    for(t=0;t<nn;t++)dvec[t]= big;
+  
+    for(j=0;j<(*m);j++){
+        i=0;
+        ii=0L; 
+        maxD = big;
+	while(i<*n){
+	    tmp=0.0;
+            l=0; 
+	    while(l<*p && tmp < (maxD+eps)){
+	        tmp+=pow(fabs(learn[i+l*n[0]]-valid[j+l*m[0]]),*mink)* weights[l];
+                l++; 
+	    }
+
+            if(tmp < maxD){
+	        dvec[ii]=tmp;
+	        cvec[ii]=i;
+                ii++;
+            }
+            if( ii==(nn-1L) ){  
+                rsort_with_index(dvec, cvec, nn);
+                ii= *k-1L;
+                maxD = dvec[*k-1L]; 
+            }
+            i++;         
 	}
+        rsort_with_index(dvec, cvec, nn);
+        for(t=0;t<*k;t++){
+            cl[j+t * *m]=cvec[t];
+            dm[j+t * *m]=pow(dvec[t],(1.0/(*mink)));
+        }
+    }
 }
+
+
+void dmEuclid(double *learn, double *valid, int *n, int *m, int *p, double *dm, int *cl, int *k, double *weights){
+    int i, j, l, t, nn, ii, kk; 
+    double tmp, *dvec, maxD;
+    int *cvec;
+
+    kk = MAX(10L, *k);
+    kk = MIN(kk, *n);
+    nn = MIN(2L*kk, *n);
+
+    cvec = (int *) R_alloc(nn, sizeof(int));
+    dvec = (double *) R_alloc(nn, sizeof(double));
+    for(t=0;t<nn;t++)dvec[t]= big;
+  
+    for(j=0;j<(*m);j++){
+        i=0;
+        ii=0L; 
+        maxD = big;
+	while(i<*n){
+	    tmp=0.0;
+            l=0; 
+	    while(l<*p && tmp < (maxD+eps)){
+	        tmp+=pow(learn[i+l*n[0]]-valid[j+l*m[0]],2.0)* weights[l];
+                l++; 
+	    }
+
+            if(tmp < maxD){
+	        dvec[ii]=tmp;
+	        cvec[ii]=i;
+                ii++;
+            }
+            if( ii==(nn-1L) ){  
+                rsort_with_index(dvec, cvec, nn);
+                ii= *k-1L;
+                maxD = dvec[*k-1L]; 
+            }
+            i++;         
+	}
+        rsort_with_index(dvec, cvec, nn);
+        for(t=0;t<*k;t++){
+            cl[j+t * *m]=cvec[t];
+            dm[j+t * *m]=sqrt(dvec[t]);
+        }
+    }
+}
+
+
+
+
+
 

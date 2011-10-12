@@ -84,7 +84,7 @@ A data frame with 1082 observations on the following 18 variables.
 Fahrmeir, L., Kuenstler, R., Pigeot, I. und Tutz, G. (1997): \emph{Statistik: der Weg zur Datenanalyse}, Springer, Berlin. 
 \url{http://www.stat.uni-muenchen.de/service/datenarchiv}
 
-The data were converted to R format by \email{klaus.schliep@snv.jussieu.fr}.
+The data were converted to R format by \email{klaus.schliep@gmail.com}.
 }
 \examples{
 data(miete)

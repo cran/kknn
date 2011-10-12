@@ -1,0 +1,57 @@
+            CHANGES IN KKNN VERSION 1.1-1
+
+
+OTHER CHANGES
+
+    o computation of Eucledian distances is much faster. 
+
+
+            CHANGES IN KKNN VERSION 1.1-0
+
+
+NEW FEATURES
+
+    o added spectral clustering function specClust. 
+
+
+OTHER CHANGES
+
+    o computation of knn distances is much faster. 
+
+
+
+            CHANGES IN KKNN VERSION 1.0-8
+
+
+BUG FIXES
+
+    o the data.frame for the training data set does not have to contain the 
+      response variable (suggested by Carlos J. Gil Bellosta).  
+
+
+
+            CHANGES IN KKNN VERSION 1.0-5
+
+
+BUG FIXES
+
+    o A bug was fixed, leave-one-out crossvalidation now works fine.
+
+
+
+            CHANGES IN KKNN VERSION 1.0-3
+
+
+NEW FEATURES
+
+    o new parameter ykernel: Window width of an y-kernel, 
+      especially for prediction of ordinal classes.
+
+
+BUG FIXES
+
+    o A bug was fixed in the kernel="rank" in kknn.
+
+    o kernel  = "gaussian" did not work correctly: this has been fixed.
+
+

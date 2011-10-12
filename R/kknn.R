@@ -1,5 +1,5 @@
-.First.lib  <- function(libname, pkgname) {
-	library.dynam ("kknn", pkgname, libname)
+.onLoad  <- function(libname, pkgname) {
+    library.dynam ("kknn", pkgname, libname)
 }
 
 
@@ -99,24 +99,25 @@ contr.metric <- function(n, contrasts = TRUE)
 kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k = 7, distance = 2, 
     kernel = "triangular", ykernel = NULL, contrasts=c('unordered'="contr.dummy",ordered="contr.ordinal")) 
 {
-if(is.null(ykernel)) ykernel=0
-weight.y = function(l=1,diff = 0){
-	k=diff+1
-    result=matrix(0,l,l)
-    diag(result)=k
-    for(i in 1:(k-1)){
-        for(j in 1:(l-i)){
+    if(is.null(ykernel)) ykernel=0
+
+    weight.y = function(l=1,diff = 0){
+        k=diff+1
+        result=matrix(0,l,l)
+        diag(result)=k
+        for(i in 1:(k-1)){
+            for(j in 1:(l-i)){
                 result[j,j+i]=k-i
                 result[j+i,j]=k-i
-                }
+            }
         }
         result  
-}
+    }
 
-	ca <- match.call()
-	response = NULL
-	old.contrasts<-getOption('contrasts')
-	options(contrasts=contrasts)
+    ca <- match.call()
+    response = NULL
+    old.contrasts<-getOption('contrasts')
+    options(contrasts=contrasts)
 
     mf <- model.frame(formula, data = train)
     mt <- attr(mf, "terms")
@@ -140,15 +141,11 @@ weight.y = function(l=1,diff = 0){
 
     learn <- model.matrix(mt, mf)
     valid <-model.matrix(mt2,test)
-
     m <- dim(learn)[1]
     p <- dim(valid)[1]
     q <- dim(learn)[2]
-    D <- matrix(0, nrow = p, ncol = k+1)
-    CL <- matrix(0, nrow = p, ncol = k+1)
-   
+
     ind <- attributes(valid)$assign
-   	
     d.sd<-numeric(length(ind))+1
     we<-numeric(length(ind))+1
     
@@ -163,10 +160,21 @@ weight.y = function(l=1,diff = 0){
     learn <- t(t(learn)/d.sd)
     valid <- t(t(valid)/d.sd)
 
-    dmtmp <- .C("dm", as.double(learn), as.double(valid), 
-    as.integer(m), as.integer(p), as.integer(q), 
-    dm=as.double(D), cl=as.integer(CL), k=as.integer(k+1), 
-    as.double(distance),as.double(we),PACKAGE='kknn')
+    ord = order(we * apply(learn, 2, sd), decreasing=TRUE)
+    learn = learn[,ord, drop=FALSE]
+    valid = valid[,ord, drop=FALSE]
+
+    Euclid <- FALSE
+    if(distance==2) Euclid <- TRUE
+    if(Euclid) dmtmp <- .C("dmEuclid", as.double(learn), as.double(valid), 
+        as.integer(m), as.integer(p), as.integer(q), 
+        dm=double((k+1L) * p), cl=integer((k+1L) * p), k=as.integer(k+1), 
+        as.double(we), dup=FALSE, PACKAGE='kknn')
+
+    else dmtmp <- .C("dm", as.double(learn), as.double(valid), 
+        as.integer(m), as.integer(p), as.integer(q), 
+        dm=double((k+1L) * p), cl=integer((k+1L) * p), k=as.integer(k+1), 
+        as.double(distance),as.double(we), dup=FALSE, PACKAGE='kknn')
     
     D <- matrix(dmtmp$dm, nrow = p, ncol = k + 1)
     C <- matrix(dmtmp$cl, nrow = p, ncol = k + 1)
@@ -263,8 +271,10 @@ print.kknn <- function(x, digits = max(3, getOption("digits") - 3), ...)
 }
 
 
+
 summary.kknn <- function(object, ...)
 {
+
 	cat("\nCall:\n", deparse(object$call), "\n\n", sep = "")
 	cat("Response: ",deparse(object$response),"\n",sep="")
 	digits = max(3, getOption("digits") - 3)
@@ -322,15 +332,11 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
         kernel))
     MEAN.SQU <- matrix(nrow = kmax, ncol = r, dimnames = list(c(1:kmax), 
         kernel))
-    m <- dim(data)[1]
-    CL <- matrix(nrow = m, ncol = kmax + 2)
-    D <- matrix(nrow = m, ncol = kmax + 2)
     P <- list(kmax * r)
     m <- dim(mm.data)[1]
     q <- dim(mm.data)[2]
     p <- m
-    D <- matrix(0, nrow = p, ncol = kmax + 2)
-    CL <- matrix(0, nrow = p, ncol = kmax + 2)
+
     ind <- attributes(mm.data)$assign
     d.sd <- numeric(length(ind)) + 1
     we <- numeric(length(ind)) + 1
@@ -341,11 +347,21 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
     }
     we[d.sd == 0] = 0
     d.sd[d.sd == 0] = 1
-    mm.data <- t(t(mm.data)/d.sd)
-    dmtmp <- .C("dm", as.double(mm.data), as.double(mm.data), 
-        as.integer(m), as.integer(p), as.integer(q), dm = as.double(D), 
-        cl = as.integer(CL), k = as.integer(kmax + 2), as.double(distance), 
-        as.double(we), PACKAGE = "kknn")
+    mm.data <- t(t(mm.data)/d.sd) 
+
+    ord = order(we * apply(mm.data, 2, sd), decreasing=TRUE)
+    mm.data[, ord] #, we[ord]
+
+    Euclid <- FALSE
+    if(distance==2) Euclid <- TRUE
+    if(Euclid) dmtmp <- .C("dmEuclid", as.double(mm.data), as.double(mm.data), 
+        as.integer(m), as.integer(p), as.integer(q), dm = double((kmax + 2L) * p), 
+        cl = integer((kmax + 2L) * p), k = as.integer(kmax + 2), 
+        as.double(we), dup=FALSE, PACKAGE = "kknn")
+    else dmtmp <- .C("dm", as.double(mm.data), as.double(mm.data), 
+        as.integer(m), as.integer(p), as.integer(q), dm = double((kmax + 2L) * p), 
+        cl = integer((kmax + 2L) * p), k = as.integer(kmax + 2), as.double(distance), 
+        as.double(we), dup=FALSE, PACKAGE = "kknn")
     D <- matrix(dmtmp$dm, nrow = p, ncol = kmax + 2)
     C <- matrix(dmtmp$cl, nrow = p, ncol = kmax + 2)
     C <- C + 1
@@ -393,7 +409,7 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
                 W <- cos(V * pi/2)
             if (kernel[s] == "gaussian") {
             	v <- j + 1
-         	    alpha = 1/(2 * v)
+         	alpha = 1/(2 * v)
              	qua = abs(qnorm(alpha))
              	W = V*qua
             	W = apply(as.matrix(W), 2, dnorm)

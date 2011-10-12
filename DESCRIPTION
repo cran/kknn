@@ -1,12 +1,14 @@
 Package: kknn
 Title: Weighted k-Nearest Neighbors
-Version: 1.0-8
-Date: 2010-08-5
+Version: 1.1-1
+Date: 2011-10-12
 Author: Klaus Schliep & Klaus Hechenbichler
-Description: Weighted k-Nearest Neighbors Classification and Regression
-Maintainer: Klaus Schliep <k.p.schliep@massey.ac.nz>
-Depends: R(>= 2.0.0)
+Description: Weighted k-Nearest Neighbors Classification, Regression
+        and Clustering
+Maintainer: Klaus Schliep <klaus.schliep@gmail.com>
+Depends: R (>= 2.10)
+Imports: Matrix, igraph
 License: GPL (>= 2)
-Packaged: 2010-08-05 14:55:37 UTC; kschliep
+Packaged: 2011-10-12 11:40:02 UTC; kschliep
 Repository: CRAN
-Date/Publication: 2010-08-05 15:42:05
+Date/Publication: 2011-10-12 12:09:54

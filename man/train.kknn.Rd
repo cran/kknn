@@ -48,7 +48,7 @@ train.kknn(formula, data, kmax = 11, distance = 2, kernel = NULL,
 
 Hechenbichler K. (2005)  \emph{Ensemble-Techniken und ordinale Klassifikation}, PhD-thesis
 }
-\author{ Klaus P. Schliep \email{klaus.schliep@snv.jussieu.fr} }
+\author{ Klaus P. Schliep \email{klaus.schliep@gmail.com} }
 \seealso{ \code{\link[kknn]{kknn}} and \code{\link[kknn]{simulation}} }
 \examples{
 library(kknn)

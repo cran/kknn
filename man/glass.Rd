@@ -47,7 +47,7 @@ A data frame with 214 observations on the following 11 variables.
 }    
 The data have been taken from the UCI Machine Learning Database Repository \cr 
 \url{http://www.ics.uci.edu/~mlearn/MLRepository.html} \cr   
-and were converted to R format by \email{klaus.schliep@snv.jussieu.fr}.    
+and were converted to R format by \email{klaus.schliep@gmail.com}.    
 }
 \examples{
 data(glass)

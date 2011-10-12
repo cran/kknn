@@ -34,7 +34,8 @@ Johns Hopkins University, Johns Hopkins Road, Laurel, MD 20723
     
 The data have been taken from the UCI Machine Learning Database Repository \cr
 \url{http://www.ics.uci.edu/~mlearn/MLRepository.html}\cr   
-and were converted to R format by \email{klaus.schliep@snv.jussieu.fr}.   
+and were converted to R format by \email{klaus.schliep@gmail.com
+}.   
 }
 \examples{
 data(ionosphere)
