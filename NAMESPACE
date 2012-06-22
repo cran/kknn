@@ -1,6 +1,6 @@
 useDynLib(kknn, .registration=TRUE)
 
-import(igraph, Matrix)
+import(Matrix, igraph)
 
 export(simulation, kknn, train.kknn, contr.dummy, contr.metric, contr.ordinal, specClust)
 

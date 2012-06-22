@@ -1,6 +1,6 @@
 /*****************************************************************/
 /*
- *  Copyright (C)2009-2011 Klaus Schliep
+ *  Copyright (C)2009-2012 Klaus Schliep
  *               
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -79,9 +79,9 @@ void dm(double *learn, double *valid, int *n, int *m, int *p, double *dm, int *c
 }
 
 
-void dmEuclid(double *learn, double *valid, int *n, int *m, int *p, double *dm, int *cl, int *k, double *weights){
+void dmEuclid(double *learn, double *valid, int *n, int *m, int *p, double *dm, int *cl, int *k, double *mink, double *weights){
     int i, j, l, t, nn, ii, kk; 
-    double tmp, *dvec, maxD;
+    double tmp, *dvec, maxD, tmp2;
     int *cvec;
 
     kk = MAX(10L, *k);
@@ -100,7 +100,8 @@ void dmEuclid(double *learn, double *valid, int *n, int *m, int *p, double *dm, 
 	    tmp=0.0;
             l=0; 
 	    while(l<*p && tmp < (maxD+eps)){
-	        tmp+=pow(learn[i+l*n[0]]-valid[j+l*m[0]],2.0)* weights[l];
+                tmp2 = learn[i+l*n[0]]-valid[j+l*m[0]];
+	        tmp+=(tmp2*tmp2)* weights[l];
                 l++; 
 	    }
 

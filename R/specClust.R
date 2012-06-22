@@ -26,7 +26,7 @@ mydist <- function(data, k=20, distance = 2){
     k1 = k+1L
     dmtmp <- .C("dmEuclid", as.double(data), as.double(data), 
         as.integer(m), as.integer(m), as.integer(q), dm = double(m*k1), 
-        cl = integer(m*k1), k = as.integer(k1), 
+        cl = integer(m*k1), k = as.integer(k1), as.double(distance), 
         as.double(rep(1,q)), dup=FALSE, PACKAGE = "kknn")
     D <- matrix(dmtmp$dm, nrow = m, ncol = k1)[,-1, drop=FALSE]
     C <- matrix(dmtmp$cl + 1L, nrow = m, ncol = k1)[,-1, drop=FALSE]
@@ -114,8 +114,10 @@ specClust <- function (data, centers=NULL, nn = 7, method = "symmetric", gmax=NU
     test=TRUE
     while(test){ 
         DC = mydist(data, nn)
-        sif = cbind(1:n, as.vector(DC[[2]]))
-        g <- graph.data.frame(sif, directed=FALSE)
+#        sif = cbind(1:n, as.vector(DC[[2]]))
+#        g <- graph.data.frame(sif, directed=FALSE)
+        sif <- rbind(1:n, as.vector(DC[[2]]))
+        g <- graph(sif, directed=FALSE)        
         g <- decompose.graph(g, min.vertices=4)
         if (length(g) > 1) {
             #warning("graph not connected")

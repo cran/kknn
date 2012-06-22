@@ -145,20 +145,29 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
     p <- dim(valid)[1]
     q <- dim(learn)[2]
 
-    ind <- attributes(valid)$assign
+    ind <- attributes(valid)$assign 
+
     d.sd<-numeric(length(ind))+1
     we<-numeric(length(ind))+1
     
-    for ( i in 1:max(ind)){
-    	d.sd[ind==i]=sqrt(mean(diag(cov(as.matrix(learn[,ind==i])))))
+    d.sd = apply(learn, 2, var)
+    for (i in unique(ind)){
+    	d.sd[ind==i] = sqrt(mean(d.sd[ind==i]))
     	we[ind==i] = 1/sum(ind==i)
     	}
+
+#    for ( i in 1:max(ind)){
+#    	d.sd[ind==i]=sqrt(mean(diag(cov(as.matrix(learn[,ind==i])))))
+#    	we[ind==i] = 1/sum(ind==i)
+#    	}
     
     we[d.sd==0]=0
     d.sd[d.sd==0]=1
-  
-    learn <- t(t(learn)/d.sd)
-    valid <- t(t(valid)/d.sd)
+
+#    learn <- t(t(learn)/d.sd)
+#    valid <- t(t(valid)/d.sd)
+    learn <- learn %*% diag(1/d.sd) 
+    valid <- valid %*% diag(1/d.sd)
 
     ord = order(we * apply(learn, 2, sd), decreasing=TRUE)
     learn = learn[,ord, drop=FALSE]
@@ -169,7 +178,7 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
     if(Euclid) dmtmp <- .C("dmEuclid", as.double(learn), as.double(valid), 
         as.integer(m), as.integer(p), as.integer(q), 
         dm=double((k+1L) * p), cl=integer((k+1L) * p), k=as.integer(k+1), 
-        as.double(we), dup=FALSE, PACKAGE='kknn')
+        as.double(distance),as.double(we), dup=FALSE, PACKAGE='kknn')
 
     else dmtmp <- .C("dm", as.double(learn), as.double(valid), 
         as.integer(m), as.integer(p), as.integer(q), 
@@ -340,23 +349,31 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
     ind <- attributes(mm.data)$assign
     d.sd <- numeric(length(ind)) + 1
     we <- numeric(length(ind)) + 1
-    for (i in 1:max(ind)) {
-        d.sd[ind == i] = sqrt(mean(diag(cov(as.matrix(mm.data[, 
-            ind == i])))))
-        we[ind == i] = 1/sum(ind == i)
-    }
+
+#    for (i in 1:max(ind)) {
+#        d.sd[ind == i] = sqrt(mean(diag(cov(as.matrix(mm.data[, ind == i])))))
+#        we[ind == i] = 1/sum(ind == i)
+#    }
+
+    d.sd = apply(mm.data, 2, var)
+    for (i in unique(ind)){
+    	d.sd[ind==i] = sqrt(mean(d.sd[ind==i]))
+    	we[ind==i] = 1/sum(ind==i)
+    	}
+
     we[d.sd == 0] = 0
     d.sd[d.sd == 0] = 1
-    mm.data <- t(t(mm.data)/d.sd) 
+#    mm.data <- t(t(mm.data)/d.sd) 
+    mm.data <- mm.data %*% diag(1/d.sd)         
 
     ord = order(we * apply(mm.data, 2, sd), decreasing=TRUE)
-    mm.data[, ord] #, we[ord]
+#    mm.data <- mm.data[, ord, drop=FALSE] #, we[ord]
 
     Euclid <- FALSE
     if(distance==2) Euclid <- TRUE
-    if(Euclid) dmtmp <- .C("dmEuclid", as.double(mm.data), as.double(mm.data), 
+    if(Euclid) dmtmp <- .C("dm", as.double(mm.data), as.double(mm.data), 
         as.integer(m), as.integer(p), as.integer(q), dm = double((kmax + 2L) * p), 
-        cl = integer((kmax + 2L) * p), k = as.integer(kmax + 2), 
+        cl = integer((kmax + 2L) * p), k = as.integer(kmax + 2), as.double(distance), 
         as.double(we), dup=FALSE, PACKAGE = "kknn")
     else dmtmp <- .C("dm", as.double(mm.data), as.double(mm.data), 
         as.integer(m), as.integer(p), as.integer(q), dm = double((kmax + 2L) * p), 

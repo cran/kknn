@@ -1,9 +1,16 @@
+            CHANGES IN KKNN VERSION 1.1-2
+
+BUG FIXES
+
+    o changed package to work with igraph >= 0.6  
+
+
             CHANGES IN KKNN VERSION 1.1-1
 
 
 OTHER CHANGES
 
-    o computation of Eucledian distances is much faster. 
+    o computation of Eucledian distances is 3-5 times faster. 
 
 
             CHANGES IN KKNN VERSION 1.1-0

@@ -1,8 +1,8 @@
-2a37eef909ad0ad3a80bfdd5a24f4b0c *DESCRIPTION
-ff72abca2888fb3e5a9dc5fa187f0dd3 *NAMESPACE
-79addb5e97ce758b03e696d06b7585c1 *NEWS
-f32a246b6b3f735e40d670945876a524 *R/kknn.R
-3d4edd173f8127a92a426477b49eda72 *R/specClust.R
+b16b9db3d59176c4a3fcd535eb29eb6d *DESCRIPTION
+fbdfa969dd44871fd2c9de9eb52909ef *NAMESPACE
+a69b6af77751eb1fd9146a1632eab403 *NEWS
+c0e2a8f6578d5012086b1701b3fce604 *R/kknn.R
+153fc4f589249258d727c9c9bce749eb *R/specClust.R
 91074ac86d02f858cc5095b1f6d30367 *data/glass.RData
 dbc40eb130e5c07ce1115a8a687aa4ea *data/ionosphere.RData
 c7fc2118073afaecd8d61f1717b27df0 *data/miete.RData
@@ -13,6 +13,6 @@ e478f13283b0431ed8fe028de1cb680f *man/ionosphere.Rd
 b4a1a8e992e81f50aa3d6e86bdd6e5b5 *man/kknn.Rd
 3f6130da3ae9f13b1c44f3dc456875d2 *man/miete.Rd
 9209f668e02d0872a4c86631cc92911e *man/simulation.Rd
-deda34137b5f117ce4ff405d07a86eef *man/specClust.Rd
+6a77e3becc20ac8fada00eaf5076ad96 *man/specClust.Rd
 f2c7ee2ff8625fb4899911b02cfa9e59 *man/train.kknn.Rd
-8e9e837f2e0a98607ef7e477bc5403db *src/dm.c
+c0b3dce6aa9f6e805b26a5e82d85433a *src/dm.c
