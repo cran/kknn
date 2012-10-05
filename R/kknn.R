@@ -96,6 +96,12 @@ contr.metric <- function(n, contrasts = TRUE)
 }
 
 
+optKernel <- function(k, d=1){
+   1/k*(1 + d/2 - d/(2*k^(2/d)) * ( (1:k)^(1+2/d) - (0:(k-1))^(1+2/d)  ))
+}
+
+
+# , optd = 2
 kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k = 7, distance = 2, 
     kernel = "triangular", ykernel = NULL, contrasts=c('unordered'="contr.dummy",ordered="contr.ordinal")) 
 {
@@ -114,6 +120,9 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
         result  
     }
 
+    kernel <- match.arg(kernel, c("rectangular", "triangular", "epanechnikov", "biweight", 
+        "triweight", "cos", "inv", "gaussian", "rank", "optimal"), FALSE)
+    
     ca <- match.call()
     response = NULL
     old.contrasts<-getOption('contrasts')
@@ -125,6 +134,8 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
     formula2[[2]] <- NULL
     mt2 <- terms.formula(formula2, data=train)
     cl <- model.response(mf)
+
+    d <- sum(attr(mt, "order"))
 
     if(is.ordered(cl)) {
         response<-"ordinal"
@@ -188,6 +199,7 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
     D <- matrix(dmtmp$dm, nrow = p, ncol = k + 1)
     C <- matrix(dmtmp$cl, nrow = p, ncol = k + 1)
     maxdist <- D[, k + 1]
+    maxdist[maxdist < 1.0e-6] <- 1.0e-6
     D <- D[, 1:k]
     C <- C[, 1:k]+1
     CL <- matrix(cl[C], nrow = p, ncol = k)     
@@ -200,7 +212,8 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
         weightClass <- NULL
     }
 
-    W <- D/sapply(maxdist,'max',1e-6)
+#    W <- D/sapply(maxdist,'max',1e-6)
+    W <- D/maxdist
     W <- pmin(W,1-(1e-6))
     W <- pmax(W,1e-6)
 
@@ -217,11 +230,14 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
     if (kernel=="cos") W <- cos(W*pi/2)
     if (kernel=="triweights") W <- 1
     if (kernel=="gaussian"){
-	alpha=1/(2*(k+1))
-	qua=abs(qnorm(alpha))
-	W=W*qua
+	    alpha=1/(2*(k+1))
+	    qua=abs(qnorm(alpha))
+	    W=W*qua
         W = dnorm(W, sd = 1)
     }
+    if (kernel == "optimal") {
+        W = rep(optKernel(k, d=d), each=p)
+    } 
     W <- matrix(W, p, k)
 
 if(response!="continuous"){
@@ -306,9 +322,8 @@ predict.train.kknn <- function (object, newdata, ...)
 }
 
 
-train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, ykernel = NULL, 
-    contrasts = c(unordered = "contr.dummy", ordered = "contr.ordinal"), 
-    ...) 
+train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = "triangular", ykernel = NULL, 
+    contrasts = c(unordered = "contr.dummy", ordered = "contr.ordinal"), ...) 
 {
 	if(is.null(ykernel)) ykernel=0
     weight.y = function(l = 1, diff = 0) {
@@ -323,7 +338,11 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
         }
         result
     }
-
+#    if (is.null(kernel)) 
+#        kernel = "triangular"
+    kernel <- match.arg(kernel, c("rectangular", "triangular", "epanechnikov", "biweight", 
+        "triweight", "cos", "inv", "gaussian", "rank", "optimal"), TRUE)
+    
     call <- match.call()
     mf <- model.frame(formula, data = data)
     mt <- attr(mf, "terms")
@@ -332,8 +351,9 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
     old.contrasts <- getOption("contrasts")
     options(contrasts = contrasts)
     mm.data <- model.matrix(mt, mf)
-    if (is.null(kernel)) 
-        kernel = "triangular"
+  
+    d <- sum(attr(mt, "order"))
+
     r <- length(kernel)
     MISCLASS <- matrix(nrow = kmax, ncol = r, dimnames = list(c(1:kmax), 
         kernel))
@@ -404,7 +424,9 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
     }
     for (j in 1:(kmax)) {
         maxdist <- D[, j + 1]
-        V <- D[, 1:j]/sapply(maxdist, "max", 1e-06)
+        maxdist[maxdist < 1.0e-06] = 1.0e-06
+        V <- D[, 1:j]/ maxdist # sapply(maxdist, "max", 1e-06)
+#        V <- D[, 1:j]/sapply(maxdist, "max", 1e-06)
         V <- pmin(V, 1 - (1e-06))
         V <- pmax(V, 1e-06)
         for (s in 1:r) {
@@ -426,10 +448,13 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = NULL, yk
                 W <- cos(V * pi/2)
             if (kernel[s] == "gaussian") {
             	v <- j + 1
-         	alpha = 1/(2 * v)
+         	    alpha = 1/(2 * v)
              	qua = abs(qnorm(alpha))
              	W = V*qua
             	W = apply(as.matrix(W), 2, dnorm)
+            }
+            if (kernel[s] == "optimal") {
+                W = rep(optKernel(j,d), each=m)
             }
             W <- matrix(W, m, j)
             if (response != "continuous") {

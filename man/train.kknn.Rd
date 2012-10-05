@@ -9,7 +9,7 @@
   Training of kknn method via leave-one-out crossvalidation. 
 }
 \usage{
-train.kknn(formula, data, kmax = 11, distance = 2, kernel = NULL,
+train.kknn(formula, data, kmax = 11, distance = 2, kernel = "triangular",
 	ykernel = NULL, contrasts = c('unordered' = "contr.dummy",
 	ordered = "contr.ordinal"), ...)
 }
@@ -21,10 +21,11 @@ train.kknn(formula, data, kmax = 11, distance = 2, kernel = NULL,
 \item{kernel}{Kernel to use. Possible choices are "rectangular" 
 	(which is standard unweighted knn), "triangular", "epanechnikov" 
 	(or beta(2,2)), "biweight" (or beta(3,3)), "triweight" (or beta(4,4)), 
-	"cos", "inv" and "gaussian".}
+	"cos", "inv", "gaussian" and "optimal".}
 \item{ykernel}{Window width of an y-kernel, especially for prediction 
 	of ordinal classes.}  	  
-\item{contrasts}{A vector containing the 'unordered' and 'ordered' contrasts to use.}	
+\item{contrasts}{A vector containing the 'unordered' and 'ordered' contrasts to use.}
+% \item{optd}{An additional parameter for the "optimal" kernel.}	
 \item{\dots}{Further arguments passed to or from other methods.}
 }
 \value{
@@ -47,6 +48,9 @@ train.kknn(formula, data, kmax = 11, distance = 2, kernel = NULL,
 (\url{http://www.stat.uni-muenchen.de/sfb386/papers/dsp/paper399.ps})
 
 Hechenbichler K. (2005)  \emph{Ensemble-Techniken und ordinale Klassifikation}, PhD-thesis
+
+Samworth, R.J. (2012) \emph{Optimal weighted nearest neighbour classifiers.} Annals of Statistics, to appear.
+(avaialble from \url{http://www.statslab.cam.ac.uk/~rjs57/Research.html}) 
 }
 \author{ Klaus P. Schliep \email{klaus.schliep@gmail.com} }
 \seealso{ \code{\link[kknn]{kknn}} and \code{\link[kknn]{simulation}} }
@@ -56,23 +60,23 @@ library(kknn)
 data(miete)
 (train.con <- train.kknn(nmqm ~ wfl + bjkat + zh, data = miete, 
 	kmax = 25, kernel = c("rectangular", "triangular", "epanechnikov",
-	"gaussian", "rank")))
+	"gaussian", "rank", "optimal")))
 plot(train.con)
 (train.ord <- train.kknn(wflkat ~ nm + bjkat + zh, miete, kmax = 25,
  	kernel = c("rectangular", "triangular", "epanechnikov", "gaussian", 
- 	"rank")))
+ 	"rank", "optimal")))
 plot(train.ord)
 (train.nom <- train.kknn(zh ~ wfl + bjkat + nmqm, miete, kmax = 25, 
 	kernel = c("rectangular", "triangular", "epanechnikov", "gaussian", 
-	"rank")))
+	"rank", "optimal")))
 plot(train.nom)
 
 data(glass)
 glass <- glass[,-1]
 (fit.glass1 <- train.kknn(Type ~ ., glass, kmax = 15, kernel = 
-	c("triangular", "rectangular", "epanechnikov"), distance = 1))
+	c("triangular", "rectangular", "epanechnikov", "optimal"), distance = 1))
 (fit.glass2 <- train.kknn(Type ~ ., glass, kmax = 15, kernel = 
-	c("triangular", "rectangular", "epanechnikov"), distance = 2))
+	c("triangular", "rectangular", "epanechnikov", "optimal"), distance = 2))
 plot(fit.glass1)
 plot(fit.glass2)
 

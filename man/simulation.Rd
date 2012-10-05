@@ -20,8 +20,10 @@ simulation(formula, data, runs = 10, train = TRUE, k = 11, ...)
   A matrix, containing the mean and variance of the misclassification
 error, the absolute and the squared distances.
 }
-\references{Hechenbichler K. and Schliep K.P. (2004)  \emph{Weighted k-Nearest-Neighbor Techniques and Ordinal Classification}, Discussion Paper 399, SFB 386, Ludwig-Maximilians University Munich
-(\url{http://www.stat.uni-muenchen.de/sfb386/papers/dsp/paper399.ps}) }
+\references{
+Hechenbichler K. and Schliep K.P. (2004)  \emph{Weighted k-Nearest-Neighbor Techniques and Ordinal Classification}, Discussion Paper 399, SFB 386, Ludwig-Maximilians University Munich
+(\url{http://www.stat.uni-muenchen.de/sfb386/papers/dsp/paper399.ps}) 
+}
 \author{ Klaus P. Schliep \email{klaus.schliep@gmail.com} }
 \seealso{  \code{\link[kknn]{kknn}} and \code{\link[kknn]{train.kknn}} }
 \examples{
