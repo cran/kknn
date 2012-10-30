@@ -59,6 +59,7 @@ Laplacian <- function(DC, k, normalize="none"){
     j = c(INDEX[,2],INDEX[,1])
     X = as.vector(DC[[1]])[ind]
     x =  c(X, X)
+# graph.laplacian ??
     result <- sparseMatrix(i = i, j = j, x=x, dims = c(m,m))
     D = rowSums(result)
     if(normalize=="none") return(Diagonal(x=D) - result)

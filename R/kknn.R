@@ -161,7 +161,7 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
     d.sd<-numeric(length(ind))+1
     we<-numeric(length(ind))+1
     
-    d.sd = apply(learn, 2, var)
+    d.sd = apply(learn, 2, stats::var)
     for (i in unique(ind)){
     	d.sd[ind==i] = sqrt(mean(d.sd[ind==i]))
     	we[ind==i] = 1/sum(ind==i)
@@ -375,7 +375,7 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = "triangu
 #        we[ind == i] = 1/sum(ind == i)
 #    }
 
-    d.sd = apply(mm.data, 2, var)
+    d.sd = apply(mm.data, 2, stats::var)
     for (i in unique(ind)){
     	d.sd[ind==i] = sqrt(mean(d.sd[ind==i]))
     	we[ind==i] = 1/sum(ind==i)

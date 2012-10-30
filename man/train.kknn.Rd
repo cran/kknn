@@ -56,7 +56,7 @@ Samworth, R.J. (2012) \emph{Optimal weighted nearest neighbour classifiers.} Ann
 \seealso{ \code{\link[kknn]{kknn}} and \code{\link[kknn]{simulation}} }
 \examples{
 library(kknn)
-
+\dontrun{
 data(miete)
 (train.con <- train.kknn(nmqm ~ wfl + bjkat + zh, data = miete, 
 	kmax = 25, kernel = c("rectangular", "triangular", "epanechnikov",
@@ -70,7 +70,7 @@ plot(train.ord)
 	kernel = c("rectangular", "triangular", "epanechnikov", "gaussian", 
 	"rank", "optimal")))
 plot(train.nom)
-
+}
 data(glass)
 glass <- glass[,-1]
 (fit.glass1 <- train.kknn(Type ~ ., glass, kmax = 15, kernel = 
