@@ -13,7 +13,7 @@ In addition even ordinal and continuous variables can be predicted.
 }
 \usage{
 kknn(formula = formula(train), train, test, na.action = na.omit(), 
-	k = 7, distance = 2, kernel = "triangular", ykernel = NULL,
+	k = 7, distance = 2, kernel = "optimal", ykernel = NULL, scale=TRUE,
 	contrasts = c('unordered' = "contr.dummy", ordered = "contr.ordinal"))
 }
 \arguments{
@@ -25,9 +25,9 @@ kknn(formula = formula(train), train, test, na.action = na.omit(),
   \item{distance}{Parameter of Minkowski distance.}
   \item{kernel}{Kernel to use. Possible choices are "rectangular" (which is standard unweighted knn), "triangular", "epanechnikov" (or beta(2,2)), 
 	"biweight" (or beta(3,3)), "triweight" (or beta(4,4)), "cos", "inv", "gaussian", "rank" and "optimal".} 
-  \item{ykernel}{Window width of an y-kernel, especially for prediction of ordinal classes.}  	
+  \item{ykernel}{Window width of an y-kernel, especially for prediction of ordinal classes.}
+  \item{scale}{logical, scale variable to have equal sd.}   	
   \item{contrasts}{A vector containing the 'unordered' and 'ordered' contrasts to use.}	
-%  \item{optd}{An additional parameter for the "optimal" kernel.}	
 }
 \details{
 This nearest neighbor method expands knn in several directions. First it can be used not only for classification, but also for regression and ordinal classification.
@@ -55,7 +55,7 @@ Hechenbichler K. and Schliep K.P. (2004)  \emph{Weighted k-Nearest-Neighbor Tech
 
 Hechenbichler K. (2005)  \emph{Ensemble-Techniken und ordinale Klassifikation}, PhD-thesis
 
-Samworth, R.J. (2012) \emph{Optimal weighted nearest neighbour classifiers.} Annals of Statistics, to appear.
+Samworth, R.J. (2012) \emph{Optimal weighted nearest neighbour classifiers.} Annals of Statistics, 40, 2733-2763.
 (avaialble from \url{http://www.statslab.cam.ac.uk/~rjs57/Research.html}) 
 }
 \author{ Klaus P. Schliep \email{klaus.schliep@gmail.com} \cr Klaus Hechenbichler}

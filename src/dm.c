@@ -1,6 +1,5 @@
-/*****************************************************************/
 /*
- *  Copyright (C)2009-2012 Klaus Schliep
+ *  Copyright (C)2009-2013 Klaus Schliep
  *               
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -22,9 +21,8 @@
 #include <R.h>
 #include <Rmath.h>
 #include <R_ext/Memory.h> 
-#include <R_ext/Print.h>  
+#include <Rinternals.h>
 #include <R_ext/Utils.h>
-
 
 
 #define MIN(x,y)  (((x)<(y)) ?    (x)  : (y))
@@ -32,9 +30,7 @@
 
 double eps = 1.0e-8, big = 1.0e300;
 
-// replacement rsort_with_index(dvec, cvec, nn); (schneller)
-// split learn, valid (mit is.na support) and x,x (exakter)
-// igraph replacement graph, decompose.graph (igraph raus)  
+
 void dm(double *learn, double *valid, int *n, int *m, int *p, double *dm, int *cl, int *k, double *mink, double *weights){
     int i, j, l, t, nn, ii, kk; 
     double tmp, *dvec, maxD;
@@ -47,41 +43,40 @@ void dm(double *learn, double *valid, int *n, int *m, int *p, double *dm, int *c
     cvec = (int *) R_alloc(nn, sizeof(int));
     dvec = (double *) R_alloc(nn, sizeof(double));
     for(t=0;t<nn;t++)dvec[t]= big;
-  
+
+
     for(j=0;j<(*m);j++){
         i=0;
         ii=0L; 
         maxD = big;
-// this can be a for loop
-	while(i<*n){
-	    tmp=0.0;
-            l=0; 
-	    while(l<*p && tmp < (maxD+eps)){
-// is.na support
+      while(i<*n){
+	      tmp=0.0;
+        l=0; 
+	      while(l<*p && tmp < (maxD+eps)){
 	        tmp+=pow(fabs(learn[i+l*n[0]]-valid[j+l*m[0]]),*mink)* weights[l];
-                l++; 
-	    }
+          l++; 
+	      }
 
-            if(tmp < maxD){
-	        dvec[ii]=tmp;
-	        cvec[ii]=i;
-                ii++;
+        if(tmp < maxD){
+            dvec[ii]=tmp;
+	          cvec[ii]=i;
+            ii++;
             }
-            if( ii==(nn-1L) ){  
-                rsort_with_index(dvec, cvec, nn);
-                ii= *k-1L;
-                maxD = dvec[*k-1L]; 
-            }
-            i++;         
-	}
-        rsort_with_index(dvec, cvec, nn);
-        for(t=0;t<*k;t++){
-            cl[j+t * *m]=cvec[t];
-//  p = 1.0/(*mink);
-            dm[j+t * *m]=pow(dvec[t],(1.0/(*mink)));
+        if( ii==(nn-1L) ){  
+            rsort_with_index(dvec, cvec, nn);
+            ii= *k-1L;
+            maxD = dvec[*k-1L]; 
         }
-    }
+        i++;         
+	   }
+     rsort_with_index(dvec, cvec, nn);
+     for(t=0;t<*k;t++){
+         cl[j+t * *m]=cvec[t];
+         dm[j+t * *m]=pow(dvec[t],(1.0/(*mink)));
+     }
+  }
 }
+
 
 
 void dmEuclid(double *learn, double *valid, int *n, int *m, int *p, double *dm, int *cl, int *k, double *mink, double *weights){
@@ -96,32 +91,31 @@ void dmEuclid(double *learn, double *valid, int *n, int *m, int *p, double *dm, 
     cvec = (int *) R_alloc(nn, sizeof(int));
     dvec = (double *) R_alloc(nn, sizeof(double));
     for(t=0;t<nn;t++)dvec[t]= big;
-  
     for(j=0;j<(*m);j++){
-        i=0;
+        i=0L;
         ii=0L; 
         maxD = big;
-	while(i<*n){
-	    tmp=0.0;
-            l=0; 
-	    while(l<*p && tmp < (maxD+eps)){
-                tmp2 = learn[i+l*n[0]]-valid[j+l*m[0]];
-	        tmp+=(tmp2*tmp2)* weights[l];
-                l++; 
-	    }
 
+        while(i<*n){
+	          tmp=0.0;
+            l=0; 
+	          while(l<*p && tmp < (maxD+eps)){
+                tmp2 = learn[i+l*n[0]]-valid[j+l*m[0]];
+	              tmp += (tmp2*tmp2)* weights[l];
+                l++;               
+	          }                      
             if(tmp < maxD){
-	        dvec[ii]=tmp;
-	        cvec[ii]=i;
+                dvec[ii]=tmp;
+                cvec[ii]=i;
                 ii++;
             }
             if( ii==(nn-1L) ){  
                 rsort_with_index(dvec, cvec, nn);
                 ii= *k-1L;
                 maxD = dvec[*k-1L]; 
-            }
-            i++;         
-	}
+                }
+             i++;         
+	     }
         rsort_with_index(dvec, cvec, nn);
         for(t=0;t<*k;t++){
             cl[j+t * *m]=cvec[t];
@@ -129,8 +123,6 @@ void dmEuclid(double *learn, double *valid, int *n, int *m, int *p, double *dm, 
         }
     }
 }
-
-
 
 
 

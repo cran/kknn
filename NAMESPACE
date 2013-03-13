@@ -2,7 +2,7 @@ useDynLib(kknn, .registration=TRUE)
 
 import(Matrix, igraph, stats)
 
-export(simulation, kknn, train.kknn, contr.dummy, contr.metric, contr.ordinal, specClust)
+export(simulation, kknn, train.kknn, cv.kknn, contr.dummy, contr.metric, contr.ordinal, specClust)
 
 S3method('plot', train.kknn)
 S3method('predict', kknn)
