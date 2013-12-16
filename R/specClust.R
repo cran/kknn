@@ -18,7 +18,6 @@ fast.table <- function (data)
 }                                                                                        
 
 
-
 mydist <- function(data, k=20, distance = 2){
     m <- dim(data)[1]
     data <- cbind(data, rnorm(m, sd=1e-6))
@@ -115,8 +114,6 @@ specClust <- function (data, centers=NULL, nn = 7, method = "symmetric", gmax=NU
     test=TRUE
     while(test){ 
         DC = mydist(data, nn)
-#        sif = cbind(1:n, as.vector(DC[[2]]))
-#        g <- graph.data.frame(sif, directed=FALSE)
         sif <- rbind(1:n, as.vector(DC[[2]]))
         g <- graph(sif, directed=FALSE)        
         g <- decompose.graph(g, min.vertices=4)

@@ -1,6 +1,8 @@
-useDynLib(kknn, .registration=TRUE)
+useDynLib(kknn)
 
-import(Matrix, igraph, stats)
+importFrom(Matrix, sparseMatrix, Diagonal, rowSums)
+importFrom(igraph, graph, decompose.graph, arpack)
+importFrom(stats, AIC, logLik, reorder, update) 
 
 export(simulation, kknn, train.kknn, cv.kknn, contr.dummy, contr.metric, contr.ordinal, specClust)
 
@@ -13,7 +15,7 @@ S3method('summary', kknn)
 S3method('summary', train.kknn)
 
 S3method('plot', specClust)
-# update
+
 
 
 

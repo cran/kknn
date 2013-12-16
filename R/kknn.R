@@ -101,7 +101,6 @@ optKernel <- function(k, d=1){
 }
 
 
-# , optd = 2
 kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k = 7, distance = 2, 
     kernel = "optimal", ykernel = NULL, scale=TRUE, contrasts=c('unordered'="contr.dummy",ordered="contr.ordinal")) 
 {
@@ -134,12 +133,6 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
     mt <- attr(mf, "terms")
     mt2 <- delete.response(mt)
 
-#    variables = set.diff(attr(mt,"variables"), formula2[[2]]) 
-#    train <- train[,attr(mt,"term.labels"), drop=FALSE]               
-#    formula2 <- formula           #as.formula(mf)
-#    formula2[[2]] <- NULL
-#    mt2 <- terms.formula(formula2, data=train)
-
     cl <- model.response(mf)
 
     d <- sum(attr(mt, "order"))
@@ -150,8 +143,8 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
 	}
     if(is.numeric(cl)) response<-"continuous"
     if(is.factor(cl) & !is.ordered(cl)){
-	response<-"nominal"
-	lev <- levels(cl)
+        response<-"nominal"
+	    lev <- levels(cl)
 	}
 	
     if(distance<=0)stop('distance must >0')
@@ -175,22 +168,13 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
     	we[ind==i] = 1/sum(ind==i)
     	}
 
-#    for ( i in 1:max(ind)){
-#    	d.sd[ind==i]=sqrt(mean(diag(cov(as.matrix(learn[,ind==i])))))
-#    	we[ind==i] = 1/sum(ind==i)
-#    	}
-    
     we[d.sd==0]=0
     d.sd[d.sd==0]=1
 
-#    learn <- t(t(learn)/d.sd)
-#    valid <- t(t(valid)/d.sd)
     if(scale){
 # change 5.3.2013      
         learn <- sweep(learn, 2L, d.sd, "/", check.margin = FALSE) 
         valid <- sweep(valid, 2L, d.sd, "/", check.margin = FALSE) 
-#        learn <- learn %*% diag(1/d.sd) 
-#        valid <- valid %*% diag(1/d.sd)
     } 
 # ordering allows branch and bound in distance computation
     ord = order(we * apply(learn, 2, sd), decreasing=TRUE)
@@ -227,7 +211,6 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
         weightClass <- NULL
     }
 
-#    W <- D/sapply(maxdist,'max',1e-6)
     W <- D/maxdist
     W <- pmin(W,1-(1e-6))
     W <- pmax(W,1e-6)
@@ -304,6 +287,8 @@ if (response=="ordinal") {
 }
 
 
+# valid=NULL fuer leave one out?
+# include in kknn, train.kknn 
 kknn.dist <- function(learn, valid, k = 10, distance = 2) 
 {
   m <- dim(learn)[1]
@@ -313,11 +298,10 @@ kknn.dist <- function(learn, valid, k = 10, distance = 2)
   we <- rep(1.0, q)
   
   ord = order(we * apply(learn, 2, sd), decreasing=TRUE)
-  #  we = we[ord]
   
   learn = learn[,ord, drop=FALSE]
   valid = valid[,ord, drop=FALSE]
-  
+    
   Euclid <- FALSE
   if(distance==2) Euclid <- TRUE
   if(Euclid) dmtmp <- .C("dmEuclid", as.double(learn), as.double(valid), 
@@ -329,7 +313,8 @@ kknn.dist <- function(learn, valid, k = 10, distance = 2)
                    dm=double((k+1L) * p), cl=integer((k+1L) * p), k=as.integer(k+1), 
                    as.double(distance),as.double(we), dup=FALSE, PACKAGE='kknn')
   D <- matrix(dmtmp$dm, nrow = p, ncol = k + 1)
-  D
+  C <- matrix(dmtmp$cl, nrow = p, ncol = k + 1)
+  list(C, D)
 }  
 
 
@@ -453,7 +438,7 @@ train.kknn = function (formula, data, kmax = 11, distance = 2, kernel = "optimal
     D <- matrix(dmtmp$dm, nrow = p, ncol = kmax + 2)
     C <- matrix(dmtmp$cl, nrow = p, ncol = kmax + 2)
     C <- C + 1
-    CL <- matrix(cl[C], nrow = p, ncol = kmax + 2)
+    CL <- matrix(cl[C], nrow = p, ncol = kmax + 2)  # y statt cl
     D <- D[, -1]
     C <- C[, -1]
     CL <- CL[, -1]
@@ -636,16 +621,17 @@ plot.train.kknn <-function(x,...){
 
 cv.kknn <- function(formula, data, kcv = 10, ...)
 {
-  mf <- model.frame(formula, data=data)
-  y <- model.response(mf)
-  l <- length(y)
+  mf <- model.frame(formula, data=data) 
+  # terms(formula, data = data) keine kopie der Daten?
+  y <- model.response(mf)                 
+  l <- length(y)    # nrow(data)                  
   val<-sample(kcv, size=l, replace=TRUE) 
   yhat <- numeric(l)
   for(i in 1:kcv){
     m<-dim(data)[1]
     learn<-data[val!=i,]
     valid<-data[val==i,]
-    fit = train.kknn(formula , learn, valid, ...)
+    fit = kknn(formula , learn, valid, ...)
     yhat[val==i] <- predict(fit)
   }  
   if(is.factor(y)) MISCLASS <- sum(y != yhat)/l
