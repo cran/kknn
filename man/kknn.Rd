@@ -3,6 +3,7 @@
 \alias{print.kknn}
 \alias{summary.kknn}
 \alias{predict.kknn}
+\alias{kknn.dist}
 \title{Weighted k-Nearest Neighbor Classifier }
 \description{
 Performs k-nearest neighbor classification of a test set using a
@@ -15,11 +16,14 @@ In addition even ordinal and continuous variables can be predicted.
 kknn(formula = formula(train), train, test, na.action = na.omit(), 
 	k = 7, distance = 2, kernel = "optimal", ykernel = NULL, scale=TRUE,
 	contrasts = c('unordered' = "contr.dummy", ordered = "contr.ordinal"))
+kknn.dist(learn, valid, k = 10, distance = 2)     
 }
 \arguments{
   \item{formula}{A formula object.}
   \item{train}{Matrix or data frame of training set cases.}
   \item{test}{Matrix or data frame of test set cases.}
+  \item{learn}{Matrix or data frame of training set cases.}
+  \item{valid}{Matrix or data frame of test set cases.}  
   \item{na.action}{A function which indicates what should happen when the data contain 'NA's.}
   \item{k}{Number of neighbors considered.}
   \item{distance}{Parameter of Minkowski distance.}
@@ -43,6 +47,7 @@ The number of neighbours used for the "optimal" kernel should be \eqn{ [ (2(d+4)
   \item{CL}{Matrix of classes of the k nearest neighbors.}
   \item{W}{Matrix of weights of the k nearest neighbors.}
   \item{D}{Matrix of distances of the k nearest neighbors.}
+  \item{C}{Matrix of indices of the k nearest neighbors.}
   \item{prob}{Matrix of predicted class probabilities.}
   \item{response}{Type of response variable, one of \emph{continuous}, \emph{nominal} or \emph{ordinal}.}
   \item{distance}{Parameter of Minkowski distance.}

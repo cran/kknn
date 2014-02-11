@@ -96,6 +96,22 @@ contr.metric <- function(n, contrasts = TRUE)
 }
 
 
+
+contr.int <- function (n, contrasts = TRUE) 
+{
+    if (length(n) <= 1) {
+        if (is.numeric(n) && length(n) == 1 && n > 1) 
+            levels <- 1:n
+        else stop("contrasts are not defined for 0 degrees of freedom")
+    }
+    else levels <- n
+    lenglev <- length(levels)
+    cont <- array(as.integer(1:lenglev), c(lenglev, 1), 
+                  list(levels, NULL))
+    cont
+}
+
+
 optKernel <- function(k, d=1){
    1/k*(1 + d/2 - d/(2*k^(2/d)) * ( (1:k)^(1+2/d) - (0:(k-1))^(1+2/d)  ))
 }
@@ -129,8 +145,10 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
 
     formula = as.formula(formula)
 
-    mf <- model.frame(formula, data = train)
+    mf <- model.frame(formula, data = train)    
     mt <- attr(mf, "terms")
+#reformulate(, intercept = FALSE
+    
     mt2 <- delete.response(mt)
 
     cl <- model.response(mf)
@@ -152,7 +170,7 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
 
     learn <- model.matrix(mt, mf)
     valid <-model.matrix(mt2,test)
-
+browser()
     m <- dim(learn)[1]
     p <- dim(valid)[1]
     q <- dim(learn)[2]
@@ -281,40 +299,40 @@ if (response=="ordinal") {
     #fit <- rowSums(W*CL)/sapply(rowSums(W),'max',1e-6) 
     options('contrasts'=old.contrasts)	
 	
-    result <- list(fitted.values=fit,CL=CL,W=W,D=D,prob=weightClass,response=response,distance=distance,call=ca, terms=mt)	
+    result <- list(fitted.values=fit, CL=CL, W=W, D=D, C=C, prob=weightClass, response=response, distance=distance, call=ca, terms=mt)	
     class(result)='kknn'
     result
 }
 
 
 # valid=NULL fuer leave one out?
-# include in kknn, train.kknn 
+# include in kknn, train.kknn? 
 kknn.dist <- function(learn, valid, k = 10, distance = 2) 
 {
-  m <- dim(learn)[1]
-  p <- dim(valid)[1]
-  q <- dim(learn)[2]
+    m <- dim(learn)[1]
+    p <- dim(valid)[1]
+    q <- dim(learn)[2]
   
-  we <- rep(1.0, q)
+    we <- rep(1.0, q)
   
-  ord = order(we * apply(learn, 2, sd), decreasing=TRUE)
+    ord = order(we * apply(learn, 2, sd), decreasing=TRUE)
   
-  learn = learn[,ord, drop=FALSE]
-  valid = valid[,ord, drop=FALSE]
+    learn = learn[,ord, drop=FALSE]
+    valid = valid[,ord, drop=FALSE]
     
-  Euclid <- FALSE
-  if(distance==2) Euclid <- TRUE
-  if(Euclid) dmtmp <- .C("dmEuclid", as.double(learn), as.double(valid), 
-                         as.integer(m), as.integer(p), as.integer(q), 
-                         dm=double((k+1L) * p), cl=integer((k+1L) * p), k=as.integer(k+1), 
-                         as.double(distance),as.double(we), dup=FALSE, PACKAGE='kknn')
-  else dmtmp <- .C("dm", as.double(learn), as.double(valid), 
-                   as.integer(m), as.integer(p), as.integer(q), 
-                   dm=double((k+1L) * p), cl=integer((k+1L) * p), k=as.integer(k+1), 
-                   as.double(distance),as.double(we), dup=FALSE, PACKAGE='kknn')
-  D <- matrix(dmtmp$dm, nrow = p, ncol = k + 1)
-  C <- matrix(dmtmp$cl, nrow = p, ncol = k + 1)
-  list(C, D)
+    Euclid <- FALSE
+    if(distance==2) Euclid <- TRUE
+    if(Euclid) dmtmp <- .C("dmEuclid", as.double(learn), as.double(valid), 
+        as.integer(m), as.integer(p), as.integer(q), 
+        dm=double(k * p), cl=integer(k * p), k=as.integer(k), 
+        as.double(distance),as.double(we), dup=FALSE, PACKAGE='kknn')
+    else dmtmp <- .C("dm", as.double(learn), as.double(valid), 
+        as.integer(m), as.integer(p), as.integer(q), 
+        dm=double(k * p), cl=integer(k * p), k=as.integer(k), 
+        as.double(distance),as.double(we), dup=FALSE, PACKAGE='kknn')
+    D <- matrix(dmtmp$dm, nrow = p, ncol = k)
+    C <- matrix(dmtmp$cl, nrow = p, ncol = k) + 1L
+    list(C, D)
 }  
 
 

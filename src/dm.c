@@ -1,5 +1,5 @@
 /*
- *  Copyright (C)2009-2013 Klaus Schliep
+ *  Copyright (C)2009-2014 Klaus Schliep
  *               
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -20,15 +20,14 @@
  
 #include <R.h>
 #include <Rmath.h>
-#include <R_ext/Memory.h> 
-#include <Rinternals.h>
-#include <R_ext/Utils.h>
+
 
 
 #define MIN(x,y)  (((x)<(y)) ?    (x)  : (y))
 #define MAX(x,y)  (((x)>(y)) ?    (x)  : (y))
+#define EPS 1.0e-8
+#define BIG 1.0e300
 
-double eps = 1.0e-8, big = 1.0e300;
 
 
 void dm(double *learn, double *valid, int *n, int *m, int *p, double *dm, int *cl, int *k, double *mink, double *weights){
@@ -42,17 +41,17 @@ void dm(double *learn, double *valid, int *n, int *m, int *p, double *dm, int *c
 
     cvec = (int *) R_alloc(nn, sizeof(int));
     dvec = (double *) R_alloc(nn, sizeof(double));
-    for(t=0;t<nn;t++)dvec[t]= big;
+    for(t=0;t<nn;t++)dvec[t]= BIG;
 
 
     for(j=0;j<(*m);j++){
         i=0;
         ii=0L; 
-        maxD = big;
+        maxD = BIG;
       while(i<*n){
 	      tmp=0.0;
         l=0; 
-	      while(l<*p && tmp < (maxD+eps)){
+	      while(l<*p && tmp < (maxD+EPS)){
 	        tmp+=pow(fabs(learn[i+l*n[0]]-valid[j+l*m[0]]),*mink)* weights[l];
           l++; 
 	      }
@@ -90,20 +89,20 @@ void dmEuclid(double *learn, double *valid, int *n, int *m, int *p, double *dm, 
 
     cvec = (int *) R_alloc(nn, sizeof(int));
     dvec = (double *) R_alloc(nn, sizeof(double));
-    for(t=0;t<nn;t++)dvec[t]= big;
+    for(t=0;t<nn;t++)dvec[t]= BIG;
     for(j=0;j<(*m);j++){
         i=0L;
         ii=0L; 
-        maxD = big;
+        maxD = BIG;
 
         while(i<*n){
-	          tmp=0.0;
+	        tmp=0.0;
             l=0; 
-	          while(l<*p && tmp < (maxD+eps)){
+	        while(l<*p && tmp < (maxD+EPS)){
                 tmp2 = learn[i+l*n[0]]-valid[j+l*m[0]];
-	              tmp += (tmp2*tmp2)* weights[l];
+	            tmp += (tmp2*tmp2)* weights[l];
                 l++;               
-	          }                      
+	        }                      
             if(tmp < maxD){
                 dvec[ii]=tmp;
                 cvec[ii]=i;
@@ -115,7 +114,7 @@ void dmEuclid(double *learn, double *valid, int *n, int *m, int *p, double *dm, 
                 maxD = dvec[*k-1L]; 
                 }
              i++;         
-	     }
+	    }
         rsort_with_index(dvec, cvec, nn);
         for(t=0;t<*k;t++){
             cl[j+t * *m]=cvec[t];
@@ -137,24 +136,24 @@ void dmEuclid2(double *learn, double *valid, int *learnF, int *validF, int *n, i
 
     cvec = (int *) R_alloc(nn, sizeof(int));
     dvec = (double *) R_alloc(nn, sizeof(double));
-    for(t=0;t<nn;t++)dvec[t]= big;
+    for(t=0;t<nn;t++)dvec[t]= BIG;
     for(j=0;j<(*m);j++){
         i=0L;
         ii=0L; 
-        maxD = big;
+        maxD = BIG;
         while(i<*n){
             tmp=0.0;
             l=0; 
             l2=0;
-	        while(l<*p && tmp < (maxD+eps)){
+	        while(l<*p && tmp < (maxD+EPS)){
                 tmp2 = learn[i+l*n[0]]-valid[j+l*m[0]];
 	            tmp += (tmp2*tmp2)* weights[l];
                 l++;               
 	        }
-            while(l2<*p2 && tmp < (maxD+eps)){
+            while(l2<*p2 && tmp < (maxD+EPS)){
                 if(learnF[i+l2*n[0]] != validF[j+l2*m[0]]) tmp += weights2[l2];
                 l2++;               
-	        }            
+	        }      
             if(tmp < maxD){
                 dvec[ii]=tmp;
                 cvec[ii]=i;
@@ -162,9 +161,9 @@ void dmEuclid2(double *learn, double *valid, int *learnF, int *validF, int *n, i
             }
             if( ii==(nn-1L) ){  
                 rsort_with_index(dvec, cvec, nn);
-                ii= *k-1L;
+                ii= *k-1L; // raus??
                 maxD = dvec[*k-1L]; 
-                }
+            }
             i++;         
 	    }
         rsort_with_index(dvec, cvec, nn);
@@ -174,5 +173,10 @@ void dmEuclid2(double *learn, double *valid, int *learnF, int *validF, int *n, i
         }
     }
 }
+
+
+   
+
+
 
 

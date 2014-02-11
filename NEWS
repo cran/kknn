@@ -1,3 +1,15 @@
+            CHANGES IN KKNN VERSION 1.2-4
+
+NEW FEATURES
+
+    o new function kknn.dist
+
+OTHER CHANGES
+
+    o kknn returns now an index matrix of nearest neighbors
+
+
+
             CHANGES IN KKNN VERSION 1.2-3
 
 BUG FIXES

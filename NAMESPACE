@@ -4,7 +4,7 @@ importFrom(Matrix, sparseMatrix, Diagonal, rowSums)
 importFrom(igraph, graph, decompose.graph, arpack)
 importFrom(stats, AIC, logLik, reorder, update) 
 
-export(simulation, kknn, train.kknn, cv.kknn, contr.dummy, contr.metric, contr.ordinal, specClust)
+export(simulation, kknn, train.kknn, cv.kknn, kknn.dist, contr.dummy, contr.metric, contr.ordinal, specClust)
 
 S3method('plot', train.kknn)
 S3method('predict', kknn)
