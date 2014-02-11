@@ -170,7 +170,7 @@ kknn <-  function (formula = formula(train), train, test, na.action=na.omit(), k
 
     learn <- model.matrix(mt, mf)
     valid <-model.matrix(mt2,test)
-browser()
+
     m <- dim(learn)[1]
     p <- dim(valid)[1]
     q <- dim(learn)[2]
