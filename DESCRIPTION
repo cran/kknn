@@ -1,6 +1,6 @@
 Package: kknn
 Title: Weighted k-Nearest Neighbors
-Version: 1.4.0
+Version: 1.4.1
 Authors@R: c(
     person("Klaus", "Schliep", , "klaus.schliep@gmail.com", role = c("aut", "cre")),
     person("Klaus", "Hechenbichler", role = "aut"),
@@ -19,9 +19,9 @@ Encoding: UTF-8
 NeedsCompilation: yes
 Repository: CRAN
 RoxygenNote: 7.3.2
-Packaged: 2025-04-16 07:04:03 UTC; klaus
+Packaged: 2025-05-19 13:04:06 UTC; klaus
 Author: Klaus Schliep [aut, cre],
   Klaus Hechenbichler [aut],
   Antoine Lizee [ctb]
 Maintainer: Klaus Schliep <klaus.schliep@gmail.com>
-Date/Publication: 2025-04-16 08:10:02 UTC
+Date/Publication: 2025-05-19 18:30:02 UTC
